@@ -11,6 +11,7 @@ import {
   type Settings,
 } from "@/lib/tauri";
 import { defaultOutputPath } from "@/lib/presets";
+import { useTypewriter } from "@/lib/useTypewriter";
 
 const VERBS = ["compress", "trim", "convert", "resize", "extract", "transcode", "ffmpeg"];
 
@@ -29,45 +30,12 @@ export function SimpleMode({ settings, onJobStart }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const [displayedVerb, setDisplayedVerb] = useState(VERBS[0]);
-  const currentVerbRef = useRef(VERBS[0]);
-
-  useEffect(() => {
-    let cancelled = false;
-    let typingTimer: ReturnType<typeof setInterval> | null = null;
-    let waitTimer: ReturnType<typeof setTimeout> | null = null;
-    let verbIdx = 1;
-
-    const showNext = () => {
-      if (cancelled) return;
-      const next = VERBS[verbIdx % VERBS.length];
-      verbIdx++;
-      const current = currentVerbRef.current;
-      const steps = Math.max(next.length, current.length);
-      const charDelay = Math.max(45, 750 / steps);
-
-      let i = 0;
-      typingTimer = setInterval(() => {
-        if (cancelled) { clearInterval(typingTimer!); return; }
-        i++;
-        setDisplayedVerb(next.slice(0, i) + current.slice(i));
-        if (i >= steps) {
-          clearInterval(typingTimer!);
-          currentVerbRef.current = next;
-          setDisplayedVerb(next);
-          waitTimer = setTimeout(showNext, 2800);
-        }
-      }, charDelay);
-    };
-
-    waitTimer = setTimeout(showNext, 2800);
-
-    return () => {
-      cancelled = true;
-      if (typingTimer) clearInterval(typingTimer);
-      if (waitTimer) clearTimeout(waitTimer);
-    };
-  }, []);
+  const verbIdxRef = useRef(1);
+  const displayedVerb = useTypewriter(VERBS[0], () => {
+    const next = VERBS[verbIdxRef.current % VERBS.length];
+    verbIdxRef.current++;
+    return next;
+  });
 
   useEffect(() => {
     if (file) {

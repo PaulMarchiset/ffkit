@@ -10,6 +10,7 @@ import {
   type JobProgressEvent,
   type JobDoneEvent,
 } from "@/lib/tauri";
+import { useTypewriter } from "@/lib/useTypewriter";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 
 const PHASE_WORDS = {
@@ -91,51 +92,19 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
   const [cancelling, setCancelling] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  const [displayedWord, setDisplayedWord] = useState("Probing");
-  const currentWordRef = useRef("Probing");
   const progressRef = useRef(0);
-
   useEffect(() => {
     progressRef.current = progress.percentage;
   }, [progress.percentage]);
 
-  useEffect(() => {
-    if (done) return;
-
-    let cancelled = false;
-    let typingTimer: ReturnType<typeof setInterval> | null = null;
-    let waitTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const showNext = () => {
-      if (cancelled) return;
+  const displayedWord = useTypewriter(
+    "Probing",
+    () => {
       const pool = getPool(progressRef.current);
-      const next = pool[Math.floor(Math.random() * pool.length)];
-      const current = currentWordRef.current;
-      const steps = Math.max(next.length, current.length);
-      const charDelay = Math.max(45, 750 / steps);
-
-      let i = 0;
-      typingTimer = setInterval(() => {
-        if (cancelled) { clearInterval(typingTimer!); return; }
-        i++;
-        setDisplayedWord(next.slice(0, i) + current.slice(i));
-        if (i >= steps) {
-          clearInterval(typingTimer!);
-          currentWordRef.current = next;
-          setDisplayedWord(next);
-          waitTimer = setTimeout(showNext, 2800);
-        }
-      }, charDelay);
-    };
-
-    waitTimer = setTimeout(showNext, 2800);
-
-    return () => {
-      cancelled = true;
-      if (typingTimer) clearInterval(typingTimer);
-      if (waitTimer) clearTimeout(waitTimer);
-    };
-  }, [done]);
+      return pool[Math.floor(Math.random() * pool.length)];
+    },
+    { enabled: !done },
+  );
 
   useEffect(() => {
     const unlistens = [

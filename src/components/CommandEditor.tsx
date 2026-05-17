@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { RotateCcw } from "lucide-react";
 
 interface Props {
@@ -9,8 +8,6 @@ interface Props {
 }
 
 export function CommandEditor({ command, onChange, onReset, isDirty }: Props) {
-  const ref = useRef<HTMLTextAreaElement>(null);
-
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
@@ -28,7 +25,6 @@ export function CommandEditor({ command, onChange, onReset, isDirty }: Props) {
         )}
       </div>
       <textarea
-        ref={ref}
         value={command}
         onChange={(e) => onChange(e.target.value)}
         spellCheck={false}

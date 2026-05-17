@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, FolderOpen, RotateCcw, X } from "lucide-react";
-import { cn, formatBytes, formatEta } from "@/lib/utils";
+import { formatBytes, formatEta } from "@/lib/utils";
 import {
   onJobProgress,
   onJobDone,
@@ -187,7 +187,6 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
 
   return (
     <div className="flex flex-col items-center gap-6 max-w-2xl mx-auto w-full py-8">
-     
       {/* Status word */}
       {!isDone ? (
         <div className="flex items-center gap-2 justify-center">

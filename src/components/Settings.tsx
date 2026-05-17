@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, FolderOpen } from "lucide-react";
-import { getSettings, setSettings, pickOutputFolder, type Settings } from "@/lib/tauri";
+import {
+  getSettings,
+  setSettings,
+  pickOutputFolder,
+  type Settings,
+  type Quality,
+  type HardwareAccel,
+  type UpdateChannel,
+} from "@/lib/tauri";
 
 interface Props {
   onBack: () => void;
@@ -91,7 +99,7 @@ export function SettingsPanel({ onBack }: Props) {
           <Row label="Default quality">
             <Select
               value={settings.defaultQuality}
-              onChange={(v) => setLocal({ ...settings, defaultQuality: v })}
+              onChange={(v) => setLocal({ ...settings, defaultQuality: v as Quality })}
               options={[
                 { value: "low", label: "Low" },
                 { value: "medium", label: "Medium" },
@@ -102,7 +110,7 @@ export function SettingsPanel({ onBack }: Props) {
           <Row label="Hardware acceleration">
             <Select
               value={settings.hardwareAccel}
-              onChange={(v) => setLocal({ ...settings, hardwareAccel: v })}
+              onChange={(v) => setLocal({ ...settings, hardwareAccel: v as HardwareAccel })}
               options={[
                 { value: "auto", label: "Auto (recommended)" },
                 { value: "software", label: "Force software (libx264)" },
@@ -139,7 +147,7 @@ export function SettingsPanel({ onBack }: Props) {
           <Row label="Update channel">
             <Select
               value={settings.updateChannel}
-              onChange={(v) => setLocal({ ...settings, updateChannel: v })}
+              onChange={(v) => setLocal({ ...settings, updateChannel: v as UpdateChannel })}
               options={[
                 { value: "stable", label: "Stable" },
                 { value: "beta", label: "Beta" },

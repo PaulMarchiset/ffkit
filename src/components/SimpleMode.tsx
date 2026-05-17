@@ -22,7 +22,7 @@ interface Props {
 export function SimpleMode({ settings, onJobStart }: Props) {
   const [file, setFile] = useState<FileInfo | null>(null);
   const [quality, setQuality] = useState<Quality>(
-    (settings?.defaultQuality as Quality) ?? "medium",
+    settings?.defaultQuality ?? "medium",
   );
   const [outputPath, setOutputPath] = useState("");
   const [converting, setConverting] = useState(false);
@@ -72,16 +72,7 @@ export function SimpleMode({ settings, onJobStart }: Props) {
   useEffect(() => {
     if (file) {
       const pattern = settings?.outputNaming ?? "{name}_ffkit";
-      const folder = settings?.outputFolder;
-      if (folder) {
-        const sep = file.path.includes("\\") ? "\\" : "/";
-        const filename = file.name;
-        const dotIdx = filename.lastIndexOf(".");
-        const name = dotIdx >= 0 ? filename.slice(0, dotIdx) : filename;
-        setOutputPath(`${folder}${sep}${pattern.replace("{name}", name)}.mp4`);
-      } else {
-        setOutputPath(defaultOutputPath(file.path, pattern));
-      }
+      setOutputPath(defaultOutputPath(file.path, pattern, settings?.outputFolder));
     }
   }, [file, settings]);
 

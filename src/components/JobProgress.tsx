@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, FolderOpen, RotateCcw, X } from "lucide-react";
-import { formatBytes, formatEta } from "@/lib/utils";
+import { formatBytes, formatEta, parentDir } from "@/lib/utils";
 import {
   onJobProgress,
   onJobDone,
@@ -250,14 +250,7 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
         )}
         {isSuccess && (
           <button
-            onClick={() =>
-              openPath(
-                outputPath
-                  .split(/(\\|\/)/)
-                  .slice(0, -1)
-                  .join(outputPath.includes("\\") ? "\\" : "/"),
-              )
-            }
+            onClick={() => openPath(parentDir(outputPath))}
             className="flex items-center gap-2 px-4 py-2 rounded-full border border-accent/50 text-sm text-accent bg-accent/10 hover:bg-accent/15 transition-colors"
           >
             <FolderOpen className="w-4 h-4" />

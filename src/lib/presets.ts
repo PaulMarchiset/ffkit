@@ -32,13 +32,14 @@ export const QUALITY_PRESETS: QualityPreset[] = [
 export function defaultOutputPath(
   inputPath: string,
   namingPattern: string,
+  folderOverride?: string,
 ): string {
   const sep = inputPath.includes("\\") ? "\\" : "/";
   const parts = inputPath.split(sep);
   const filename = parts.pop() ?? "";
   const dotIdx = filename.lastIndexOf(".");
   const name = dotIdx >= 0 ? filename.slice(0, dotIdx) : filename;
-  const dir = parts.join(sep);
+  const dir = folderOverride ?? parts.join(sep);
   const outName = namingPattern.replace("{name}", name);
   return `${dir}${sep}${outName}.mp4`;
 }

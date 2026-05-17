@@ -19,6 +19,8 @@ export interface FileInfo {
 
 export type Quality = "low" | "medium" | "lossless";
 export type JobMode = "preset" | "raw";
+export type HardwareAccel = "auto" | "software";
+export type UpdateChannel = "stable" | "beta";
 
 export interface JobSpec {
   inputPath: string;
@@ -54,9 +56,9 @@ export interface EncoderList {
 export interface Settings {
   outputFolder?: string;
   outputNaming: string;
-  defaultQuality: string;
-  hardwareAccel: string;
-  updateChannel: string;
+  defaultQuality: Quality;
+  hardwareAccel: HardwareAccel;
+  updateChannel: UpdateChannel;
   concurrentJobs: number;
   notifyOnDone: boolean;
   openFolderOnDone: boolean;

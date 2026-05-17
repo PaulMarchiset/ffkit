@@ -29,6 +29,13 @@ export function formatEta(secs: number): string {
   return `${m}m ${s}s`;
 }
 
+/** Return the directory portion of a Windows- or POSIX-style path. */
+export function parentDir(path: string): string {
+  const sep = path.includes("\\") ? "\\" : "/";
+  const idx = path.lastIndexOf(sep);
+  return idx >= 0 ? path.slice(0, idx) : path;
+}
+
 /** Parse the raw command string into individual args (respects "quoted paths"). */
 export function parseCommandArgs(cmd: string): string[] {
   const args: string[] = [];

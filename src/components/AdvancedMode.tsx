@@ -4,6 +4,7 @@ import { FeatureButtons } from "./FeatureButtons";
 import { CommandEditor } from "./CommandEditor";
 import { startJob, type FileInfo } from "@/lib/tauri";
 import { parseCommandArgs } from "@/lib/utils";
+import { useCommandState } from "@/lib/useCommandState";
 import { applyPromptValues, type FeatureTemplate } from "@/lib/ffmpeg-args";
 
 const DEFAULT_COMMAND =
@@ -16,41 +17,14 @@ interface Props {
 }
 
 export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
-  const [command, setCommand] = useState(DEFAULT_COMMAND);
-  const [lastPresetCommand, setLastPresetCommand] = useState(DEFAULT_COMMAND);
-  const [isDirty, setIsDirty] = useState(false);
+  const cmd = useCommandState(DEFAULT_COMMAND);
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
 
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [confirmOverwrite, setConfirmOverwrite] = useState(false);
-  const [pendingCommand, setPendingCommand] = useState<string | null>(null);
-
   const [pendingTemplate, setPendingTemplate] = useState<FeatureTemplate | null>(null);
   const [promptValues, setPromptValues] = useState<Record<string, string>>({});
-
-  function handleCommandChange(cmd: string) {
-    setCommand(cmd);
-    setIsDirty(cmd !== lastPresetCommand);
-  }
-
-  function applyCommand(cmd: string) {
-    setCommand(cmd);
-    setLastPresetCommand(cmd);
-    setIsDirty(false);
-    setConfirmOverwrite(false);
-    setPendingCommand(null);
-  }
-
-  function requestApply(cmd: string) {
-    if (isDirty) {
-      setConfirmOverwrite(true);
-      setPendingCommand(cmd);
-    } else {
-      applyCommand(cmd);
-    }
-  }
 
   function handleFeatureSelect(template: FeatureTemplate) {
     setActivePresetId(template.id);
@@ -62,16 +36,16 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
     } else {
       setPendingTemplate(null);
       setPromptValues({});
-      requestApply(template.command);
+      cmd.requestApply(template.command);
     }
   }
 
   function handlePromptApply() {
     if (!pendingTemplate) return;
-    const cmd = applyPromptValues(pendingTemplate.command, promptValues);
+    const filled = applyPromptValues(pendingTemplate.command, promptValues);
     setPendingTemplate(null);
     setPromptValues({});
-    requestApply(cmd);
+    cmd.requestApply(filled);
   }
 
   async function handleRun() {
@@ -79,7 +53,7 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
     setError(null);
     setRunning(true);
     try {
-      const filled = command
+      const filled = cmd.command
         .replace(/\{input\}/g, inputFile.path)
         .replace(/\{output\}/g, outputPath);
 
@@ -104,18 +78,18 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
     <div className="flex flex-col gap-3">
       <FeatureButtons onSelect={handleFeatureSelect} activeId={activePresetId ?? undefined} />
 
-      {confirmOverwrite && (
+      {cmd.isPendingOverwrite && (
         <div className="rounded-xl border border-amber-800/50 bg-amber-950/20 p-3 text-sm text-amber-300">
           <p className="font-medium mb-2">Replace your edited command?</p>
           <div className="flex gap-2">
             <button
-              onClick={() => pendingCommand && applyCommand(pendingCommand)}
+              onClick={cmd.confirmReplace}
               className="px-3 py-1 rounded-[10px] bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition-colors"
             >
               Replace
             </button>
             <button
-              onClick={() => { setConfirmOverwrite(false); setPendingCommand(null); }}
+              onClick={cmd.cancelReplace}
               className="px-3 py-1 rounded-[10px] border border-white/10 text-muted text-xs font-medium hover:text-[#E8E5DC] hover:border-white/20 transition-colors"
             >
               Keep mine
@@ -125,10 +99,10 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
       )}
 
       <CommandEditor
-        command={command}
-        onChange={handleCommandChange}
-        onReset={() => { setCommand(lastPresetCommand); setIsDirty(false); }}
-        isDirty={isDirty}
+        command={cmd.command}
+        onChange={cmd.onCommandChange}
+        onReset={cmd.resetToPreset}
+        isDirty={cmd.isDirty}
       />
 
       {pendingTemplate && pendingTemplate.prompts && (

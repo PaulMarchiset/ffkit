@@ -6,10 +6,20 @@ import path from "path";
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
-export default defineConfig({
+const TAURI_MOCK_ALIASES = {
+  "@tauri-apps/api/core": path.resolve(__dirname, "./src/test/mocks/tauri.ts"),
+  "@tauri-apps/api/event": path.resolve(__dirname, "./src/test/mocks/tauri.ts"),
+  "@tauri-apps/api/webviewWindow": path.resolve(__dirname, "./src/test/mocks/tauri.ts"),
+  "@tauri-apps/plugin-dialog": path.resolve(__dirname, "./src/test/mocks/tauri.ts"),
+};
+
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      ...(mode === "test" ? TAURI_MOCK_ALIASES : {}),
+    },
   },
   clearScreen: false,
   server: {
@@ -19,4 +29,4 @@ export default defineConfig({
     hmr: host ? { protocol: "ws", host, port: 1421 } : undefined,
     watch: { ignored: ["**/src-tauri/**"] },
   },
-});
+}));

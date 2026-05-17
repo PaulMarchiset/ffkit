@@ -4,6 +4,10 @@ const DWELL_MS = 2800;
 const MIN_CHAR_MS = 45;
 const TOTAL_TYPING_MS = 750;
 
+// In test builds (vite --mode test) the cycling is disabled so screenshot
+// baselines stay deterministic; the displayed word freezes at `initialWord`.
+const IS_TEST_BUILD = import.meta.env.MODE === "test";
+
 interface Options {
   enabled?: boolean;
 }
@@ -25,7 +29,7 @@ export function useTypewriter(
   pickNextRef.current = pickNext;
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || IS_TEST_BUILD) return;
     let cancelled = false;
     let typingTimer: ReturnType<typeof setInterval> | null = null;
     let waitTimer: ReturnType<typeof setTimeout> | null = null;

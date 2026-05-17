@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, FolderOpen, RotateCcw, X } from "lucide-react";
+import { ChevronDown, ChevronUp, FolderOpen, RotateCcw, X, Zap } from "lucide-react";
 import { formatBytes, formatEta, parentDir } from "@/lib/utils";
 import {
   onJobProgress,
@@ -48,20 +48,6 @@ function getPool(pct: number): string[] {
   if (pct < 10) return PHASE_WORDS.planning;
   if (pct >= 93) return PHASE_WORDS.finishing;
   return PHASE_WORDS.encoding;
-}
-
-function StarIcon() {
-  return (
-    <svg
-      width="10"
-      height="10"
-      viewBox="0 0 10 10"
-      fill="currentColor"
-      className="text-accent animate-star flex-shrink-0"
-    >
-      <path d="M5 0 L5.6 4.4 L10 5 L5.6 5.6 L5 10 L4.4 5.6 L0 5 L4.4 4.4 Z" />
-    </svg>
-  );
 }
 
 interface Props {
@@ -159,7 +145,7 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
       {/* Status word */}
       {!isDone ? (
         <div className="flex items-center gap-2 justify-center">
-          <StarIcon />
+          <Zap />
           <p className="font-serif text-2xl text-accent leading-tight">
             {displayedWord}...
           </p>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play } from "lucide-react";
+import { Zap } from "lucide-react";
 import { FeatureButtons } from "./FeatureButtons";
 import { CommandEditor } from "./CommandEditor";
 import { startJob, type FileInfo } from "@/lib/tauri";
@@ -176,7 +176,7 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
         disabled={!inputFile || !outputPath || running}
         className="flex items-center justify-center gap-2 py-2.5 rounded-[10px] text-sm font-medium text-white bg-accent hover:bg-accent/85 disabled:opacity-30 disabled:cursor-not-allowed transition-all "
       >
-        <Play className="w-4 h-4" />
+        <Zap className="w-4 h-4" />
         {running ? "Starting…" : "Run"}
       </button>
     </div>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, Loader2 } from "lucide-react";
+import { Zap, Loader2 } from "lucide-react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { cn, formatBytes, formatDuration } from "@/lib/utils";
 import { pickVideoFile, probeFile, type FileInfo } from "@/lib/tauri";
@@ -105,9 +105,7 @@ export function FilePicker({ file, onFile, onConvert, converting }: Props) {
             {converting ? (
               <Loader2 className="w-4 h-4 text-white animate-spin" />
             ) : (
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 3.75V14.25M3.75 9L9 14.25L14.25 9" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <Zap className="w-4 h-4 text-white" />
             )}
           </button>
         )}
@@ -149,7 +147,7 @@ export function FilePicker({ file, onFile, onConvert, converting }: Props) {
         className="absolute bottom-3 right-3 w-9 h-9 rounded-[10px] bg-accent flex items-center justify-center hover:bg-accent/85 transition-colors"
         title="Browse files"
       >
-        <ArrowDown className="w-4 h-4 text-white" />
+        <Zap className="w-4 h-4 text-white" />
       </button>
     </div>
   );

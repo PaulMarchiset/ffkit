@@ -60,7 +60,7 @@ export default function App() {
             <Loader2 className="w-3.5 h-3.5 animate-spin text-muted" />
           )}
           {!encoderLoading && encoders?.bestH264 && (
-            <span className="text-xs text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+            <span className="text-xs text-accent bg-accent/10 px-2 py-1 rounded-md leading-none">
               {encoders.bestH264}
             </span>
           )}

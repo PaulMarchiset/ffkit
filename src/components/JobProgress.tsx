@@ -1,54 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, FolderOpen, RotateCcw, X, Zap } from "lucide-react";
 import { formatBytes, formatEta, parentDir } from "@/lib/utils";
-import {
-  onJobProgress,
-  onJobDone,
-  onJobLog,
-  cancelJob,
-  openPath,
-  type JobProgressEvent,
-  type JobDoneEvent,
-} from "@/lib/tauri";
+import { cancelJob, openPath } from "@/lib/tauri";
 import { useTypewriter } from "@/lib/useTypewriter";
+import { useJobEvents } from "@/lib/useJobEvents";
+import { getPhasePool } from "@/lib/jobPhaseWords";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
-
-const PHASE_WORDS = {
-  analysis: [
-    "Probing", "Inspecting", "Scanning", "Reading", "Parsing",
-    "Sniffing", "Examining", "Surveying", "Demuxing", "Decoding",
-    "Detecting", "Identifying", "Measuring",
-  ],
-  planning: [
-    "Planning", "Choosing", "Selecting", "Mapping", "Routing",
-    "Configuring", "Preparing", "Calibrating", "Negotiating",
-  ],
-  encoding: [
-    "Encoding", "Transcoding", "Processing", "Crunching", "Compressing",
-    "Rendering", "Computing", "Working", "Running", "Churning", "Grinding",
-    "Cooking", "Chewing", "Munching",
-    "Filtering", "Scaling", "Resampling", "Resizing", "Cropping",
-    "Trimming", "Stretching", "Sharpening", "Denoising", "Deinterlacing",
-    "Interpolating", "Quantizing", "Sampling", "Buffering", "Streaming",
-    "Threading", "Piping", "Flowing",
-    "Mixing", "Remixing", "Normalizing", "Syncing", "Aligning", "Dithering",
-    "Muxing", "Remuxing", "Packaging", "Containing", "Assembling",
-    "Stitching", "Merging", "Concatenating",
-    "Brewing", "Wrangling", "Coaxing", "Massaging", "Nudging",
-    "Tinkering", "Whispering", "Persuading", "Hustling", "Shuffling",
-  ],
-  finishing: [
-    "Finalizing", "Flushing", "Sealing", "Writing", "Saving",
-    "Verifying", "Validating", "Checking", "Polishing", "Closing",
-  ],
-};
-
-function getPool(pct: number): string[] {
-  if (pct < 3) return PHASE_WORDS.analysis;
-  if (pct < 10) return PHASE_WORDS.planning;
-  if (pct >= 93) return PHASE_WORDS.finishing;
-  return PHASE_WORDS.encoding;
-}
 
 interface Props {
   jobId: string;
@@ -56,24 +13,8 @@ interface Props {
   onBack: () => void;
 }
 
-interface ProgressState {
-  percentage: number;
-  speed: number;
-  etaSecs: number;
-  totalSize: number;
-  fps: number;
-}
-
 export function JobProgress({ jobId, outputPath, onBack }: Props) {
-  const [progress, setProgress] = useState<ProgressState>({
-    percentage: 0,
-    speed: 0,
-    etaSecs: 0,
-    totalSize: 0,
-    fps: 0,
-  });
-  const [done, setDone] = useState<JobDoneEvent | null>(null);
-  const [logLines, setLogLines] = useState<string[]>([]);
+  const { progress, done, logLines } = useJobEvents(jobId);
   const [logOpen, setLogOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
@@ -86,39 +27,11 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
   const displayedWord = useTypewriter(
     "Probing",
     () => {
-      const pool = getPool(progressRef.current);
+      const pool = getPhasePool(progressRef.current);
       return pool[Math.floor(Math.random() * pool.length)];
     },
     { enabled: !done },
   );
-
-  useEffect(() => {
-    const unlistens = [
-      onJobProgress((e: JobProgressEvent) => {
-        if (e.jobId !== jobId) return;
-        setProgress({
-          percentage: e.percentage,
-          speed: e.speed,
-          etaSecs: e.etaSecs,
-          totalSize: e.totalSize,
-          fps: e.fps,
-        });
-      }),
-      onJobDone((e: JobDoneEvent) => {
-        if (e.jobId !== jobId) return;
-        setDone(e);
-      }),
-      onJobLog((e) => {
-        if (e.jobId !== jobId) return;
-        setLogLines((prev) => [...prev.slice(-499), e.line]);
-      }),
-    ];
-
-    return () => {
-      Promise.all(unlistens).then((fns) => fns.forEach((f) => f()));
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId]);
 
   useEffect(() => {
     if (logOpen) {

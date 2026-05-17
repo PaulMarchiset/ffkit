@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FolderOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { FilePicker } from "./FilePicker";
 import { QualityButtons } from "./QualityButtons";
@@ -29,48 +29,43 @@ export function SimpleMode({ settings, onJobStart }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Animated verb cycling
-  const [verbIndex, setVerbIndex] = useState(0);
-  const [verbStyle, setVerbStyle] = useState<React.CSSProperties>({ display: "inline-block" });
+  const [displayedVerb, setDisplayedVerb] = useState(VERBS[0]);
+  const currentVerbRef = useRef(VERBS[0]);
 
   useEffect(() => {
-    const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
-    let swap: ReturnType<typeof setTimeout>;
-    let raf1: number, raf2: number;
+    let cancelled = false;
+    let typingTimer: ReturnType<typeof setInterval> | null = null;
+    let waitTimer: ReturnType<typeof setTimeout> | null = null;
+    let verbIdx = 1;
 
-    const interval = setInterval(() => {
-      // 1. slide current word up and out
-      setVerbStyle({
-        display: "inline-block",
-        opacity: 0,
-        transform: "translateY(-20px)",
-        transition: "opacity 0.18s ease-in, transform 0.2s ease-in",
-      });
+    const showNext = () => {
+      if (cancelled) return;
+      const next = VERBS[verbIdx % VERBS.length];
+      verbIdx++;
+      const current = currentVerbRef.current;
+      const steps = Math.max(next.length, current.length);
+      const charDelay = Math.max(45, 750 / steps);
 
-      swap = setTimeout(() => {
-        // 2. swap text while invisible, snap to bottom entry position
-        setVerbIndex((i) => (i + 1) % VERBS.length);
-        setVerbStyle({ display: "inline-block", opacity: 0, transform: "translateY(20px)", transition: "none" });
+      let i = 0;
+      typingTimer = setInterval(() => {
+        if (cancelled) { clearInterval(typingTimer!); return; }
+        i++;
+        setDisplayedVerb(next.slice(0, i) + current.slice(i));
+        if (i >= steps) {
+          clearInterval(typingTimer!);
+          currentVerbRef.current = next;
+          setDisplayedVerb(next);
+          waitTimer = setTimeout(showNext, 2800);
+        }
+      }, charDelay);
+    };
 
-        // 3. after two frames (browser has painted the new position), slide in
-        raf1 = requestAnimationFrame(() => {
-          raf2 = requestAnimationFrame(() => {
-            setVerbStyle({
-              display: "inline-block",
-              opacity: 1,
-              transform: "translateY(0)",
-              transition: `opacity 0.4s ${EASING}, transform 0.4s ${EASING}`,
-            });
-          });
-        });
-      }, 220);
-    }, 2800);
+    waitTimer = setTimeout(showNext, 2800);
 
     return () => {
-      clearInterval(interval);
-      clearTimeout(swap);
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
+      cancelled = true;
+      if (typingTimer) clearInterval(typingTimer);
+      if (waitTimer) clearTimeout(waitTimer);
     };
   }, []);
 
@@ -118,8 +113,8 @@ export function SimpleMode({ settings, onJobStart }: Props) {
     <div className="flex flex-col items-center gap-6 max-w-2xl mx-auto w-full py-8">
       <h1 className="font-serif text-5xl text-[#E8E5DC] text-center leading-tight tracking-tight">
         Hello, ready to{" "}
-        <span className="text-accent" style={verbStyle}>
-          {VERBS[verbIndex]}
+        <span className="text-accent">
+          {displayedVerb}
         </span>
         ?
       </h1>
@@ -132,20 +127,22 @@ export function SimpleMode({ settings, onJobStart }: Props) {
           converting={converting}
         />
 
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center">
+          <div />
           <QualityButtons value={quality} onChange={setQuality} />
-
-          <button
-            onClick={() => setShowAdvanced((v) => !v)}
-            className="flex items-center gap-1 px-4 py-2 text-sm text-muted hover:text-[#E8E5DC] transition-colors ml-auto"
-          >
-            Advanced
-            {showAdvanced ? (
-              <ChevronUp className="w-3.5 h-3.5" />
-            ) : (
-              <ChevronDown className="w-3.5 h-3.5" />
-            )}
-          </button>
+          <div className="flex justify-end">
+            <button
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="flex items-center gap-1 px-4 py-2 text-sm text-muted hover:text-[#E8E5DC] transition-colors"
+            >
+              Advanced
+              {showAdvanced ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </div>
         </div>
 
         {file && (

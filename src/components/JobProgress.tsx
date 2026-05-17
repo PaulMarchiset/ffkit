@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, FolderOpen, RotateCcw, X } from "lucide-react";
 import { cn, formatBytes, formatEta } from "@/lib/utils";
 import {
@@ -91,8 +91,8 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
   const [cancelling, setCancelling] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  const [word, setWord] = useState("Probing");
-  const [wordStyle, setWordStyle] = useState<React.CSSProperties>({ display: "inline-block" });
+  const [displayedWord, setDisplayedWord] = useState("Probing");
+  const currentWordRef = useRef("Probing");
   const progressRef = useRef(0);
 
   useEffect(() => {
@@ -102,40 +102,38 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
   useEffect(() => {
     if (done) return;
 
-    const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
-    let swap: ReturnType<typeof setTimeout>;
-    let raf1: number, raf2: number;
+    let cancelled = false;
+    let typingTimer: ReturnType<typeof setInterval> | null = null;
+    let waitTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const interval = setInterval(() => {
-      setWordStyle({
-        display: "inline-block",
-        opacity: 0,
-        transition: "opacity 0.18s ease-in",
-      });
+    const showNext = () => {
+      if (cancelled) return;
+      const pool = getPool(progressRef.current);
+      const next = pool[Math.floor(Math.random() * pool.length)];
+      const current = currentWordRef.current;
+      const steps = Math.max(next.length, current.length);
+      const charDelay = Math.max(45, 750 / steps);
 
-      swap = setTimeout(() => {
-        const pool = getPool(progressRef.current);
-        const next = pool[Math.floor(Math.random() * pool.length)];
-        setWord(next);
-        setWordStyle({ display: "inline-block", opacity: 0, transition: "none" });
+      let i = 0;
+      typingTimer = setInterval(() => {
+        if (cancelled) { clearInterval(typingTimer!); return; }
+        i++;
+        setDisplayedWord(next.slice(0, i) + current.slice(i));
+        if (i >= steps) {
+          clearInterval(typingTimer!);
+          currentWordRef.current = next;
+          setDisplayedWord(next);
+          waitTimer = setTimeout(showNext, 2800);
+        }
+      }, charDelay);
+    };
 
-        raf1 = requestAnimationFrame(() => {
-          raf2 = requestAnimationFrame(() => {
-            setWordStyle({
-              display: "inline-block",
-              opacity: 1,
-              transition: `opacity 0.5s ${EASING}`,
-            });
-          });
-        });
-      }, 220);
-    }, 2200);
+    waitTimer = setTimeout(showNext, 2800);
 
     return () => {
-      clearInterval(interval);
-      clearTimeout(swap);
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
+      cancelled = true;
+      if (typingTimer) clearInterval(typingTimer);
+      if (waitTimer) clearTimeout(waitTimer);
     };
   }, [done]);
 
@@ -194,12 +192,12 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
       {!isDone ? (
         <div className="flex items-center gap-2 justify-center">
           <StarIcon />
-          <p className="font-serif text-xl text-accent leading-tight" style={wordStyle}>
-            {word}…
+          <p className="font-serif text-2xl text-accent leading-tight">
+            {displayedWord}...
           </p>
         </div>
       ) : (
-        <p className="font-serif text-5xl text-[#E8E5DC] leading-tight tracking-tight">
+        <p className="font-serif text-2xl text-[#E8E5DC] leading-tight">
           {isSuccess ? "Done." : isCancelled ? "Cancelled." : "Failed."}
         </p>
       )}

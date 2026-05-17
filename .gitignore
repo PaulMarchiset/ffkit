@@ -1,0 +1,24 @@
+# dependencies
+node_modules/
+
+# build artifacts
+dist/
+target/
+
+# Tauri generated
+src-tauri/gen/
+
+# bundled binaries — download separately (see README)
+src-tauri/binaries/
+
+# env / secrets
+.env
+.env.local
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/

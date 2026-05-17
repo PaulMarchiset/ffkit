@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-accent: #5F8D42;
+  --color-surface: #232320;
+  --color-muted: #87867E;
+  --color-subtle: #C0BFB5;
+  --font-serif: "Sirba", Georgia, "Times New Roman", serif;
+  --font-sans: "PP Mori", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Use local installed fonts first, then file fallback if user adds them to src/assets/fonts/ */
+@font-face {
+  font-family: "Sirba";
+  src: local("Sirba"), url("/assets/fonts/Sirba.woff2") format("woff2"),
+       url("/assets/fonts/Sirba.woff") format("woff");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "PP Mori";
+  src: local("PP Mori"), local("PPMori"), url("/assets/fonts/PPMori.woff2") format("woff2"),
+       url("/assets/fonts/PPMori.woff") format("woff");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@keyframes word-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer base {
+  html {
+    font-family: "PP Mori", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #1A1A18;
+    color: #E8E5DC;
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  button {
+    cursor: pointer;
+  }
+}

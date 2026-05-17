@@ -1,0 +1,119 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            triple: x86_64-pc-windows-msvc
+            ffmpeg-url: "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+            ffmpeg-bin: ffmpeg-master-latest-win64-gpl/bin
+            ext: ".exe"
+          - platform: macos-latest
+            triple: aarch64-apple-darwin
+            ffmpeg-url: "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
+            ffprobe-url: "https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip"
+            ext: ""
+          - platform: ubuntu-22.04
+            triple: x86_64-unknown-linux-gnu
+            ffmpeg-url: "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz"
+            ffmpeg-bin: ffmpeg-master-latest-linux64-gpl/bin
+            ext: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.triple }}
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      # ── Download ffmpeg / ffprobe ──────────────────────────────────────
+
+      - name: Download ffmpeg (Windows / Linux)
+        if: matrix.platform != 'macos-latest'
+        shell: bash
+        run: |
+          mkdir -p src-tauri/binaries
+          curl -L "${{ matrix.ffmpeg-url }}" -o ffmpeg-archive
+          if [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
+            7z x ffmpeg-archive -o.
+            cp "${{ matrix.ffmpeg-bin }}/ffmpeg.exe" "src-tauri/binaries/ffmpeg-${{ matrix.triple }}.exe"
+            cp "${{ matrix.ffmpeg-bin }}/ffprobe.exe" "src-tauri/binaries/ffprobe-${{ matrix.triple }}.exe"
+          else
+            tar -xf ffmpeg-archive
+            cp "${{ matrix.ffmpeg-bin }}/ffmpeg" "src-tauri/binaries/ffmpeg-${{ matrix.triple }}"
+            cp "${{ matrix.ffmpeg-bin }}/ffprobe" "src-tauri/binaries/ffprobe-${{ matrix.triple }}"
+            chmod +x "src-tauri/binaries/ffmpeg-${{ matrix.triple }}"
+            chmod +x "src-tauri/binaries/ffprobe-${{ matrix.triple }}"
+          fi
+
+      - name: Download ffmpeg (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          mkdir -p src-tauri/binaries
+          curl -L "${{ matrix.ffmpeg-url }}" -o ffmpeg.zip
+          curl -L "${{ matrix.ffprobe-url }}" -o ffprobe.zip
+          unzip ffmpeg.zip
+          unzip ffprobe.zip
+          cp ffmpeg "src-tauri/binaries/ffmpeg-${{ matrix.triple }}"
+          cp ffprobe "src-tauri/binaries/ffprobe-${{ matrix.triple }}"
+          chmod +x "src-tauri/binaries/ffmpeg-${{ matrix.triple }}"
+          chmod +x "src-tauri/binaries/ffprobe-${{ matrix.triple }}"
+
+      # ── Build ─────────────────────────────────────────────────────────
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signing — configure in repository secrets to enable
+          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          # WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "FFKit ${{ github.ref_name }}"
+          releaseBody: "See the assets below to download this version of FFKit."
+          releaseDraft: true
+          prerelease: false

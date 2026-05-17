@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, Play, Loader2 } from "lucide-react";
+import { ArrowDown, Loader2 } from "lucide-react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { cn, formatBytes, formatDuration } from "@/lib/utils";
 import { pickVideoFile, probeFile, type FileInfo } from "@/lib/tauri";
@@ -71,7 +71,7 @@ export function FilePicker({ file, onFile, onConvert, converting }: Props) {
   if (file) {
     return (
       <div
-        className="relative w-full rounded-2xl bg-surface border border-white/5 p-5 cursor-pointer group hover:border-white/10 transition-all"
+        className="relative w-full rounded-2xl bg-surface border border-white/5 px-5 py-7 cursor-pointer group hover:border-white/10 transition-all"
         onClick={handleClick}
       >
         <div className="flex items-center gap-4 pr-14">
@@ -91,24 +91,24 @@ export function FilePicker({ file, onFile, onConvert, converting }: Props) {
           </div>
         </div>
 
-        {/* Convert button */}
         {onConvert && (
           <button
             onClick={(e) => { e.stopPropagation(); onConvert(); }}
             disabled={converting}
             className={cn(
-              "absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-medium text-white transition-all",
-              "bg-accent hover:bg-accent/85 shadow-lg shadow-accent/20",
+              "absolute bottom-3 right-3 w-9 h-9 rounded-[10px] flex items-center justify-center transition-all",
+              "bg-accent hover:bg-accent/85",
               "disabled:opacity-50 disabled:cursor-not-allowed",
             )}
             title="Convert"
           >
             {converting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-4 h-4 text-white animate-spin" />
             ) : (
-              <Play className="w-3.5 h-3.5" />
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 3.75V14.25M3.75 9L9 14.25L14.25 9" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             )}
-            {converting ? "Starting…" : "Convert"}
           </button>
         )}
 
@@ -146,7 +146,7 @@ export function FilePicker({ file, onFile, onConvert, converting }: Props) {
 
       <button
         onClick={(e) => { e.stopPropagation(); handleClick(); }}
-        className="absolute bottom-3 right-3 w-9 h-9 rounded-[10px] bg-accent flex items-center justify-center hover:bg-accent/85 transition-colors shadow-lg shadow-accent/20"
+        className="absolute bottom-3 right-3 w-9 h-9 rounded-[10px] bg-accent flex items-center justify-center hover:bg-accent/85 transition-colors"
         title="Browse files"
       >
         <ArrowDown className="w-4 h-4 text-white" />

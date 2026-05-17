@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { FolderOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { FilePicker } from "./FilePicker";
 import { QualityButtons } from "./QualityButtons";
@@ -12,7 +12,7 @@ import {
 } from "@/lib/tauri";
 import { defaultOutputPath } from "@/lib/presets";
 
-const VERBS = ["compress", "trim", "convert", "resize", "extract", "transcode"];
+const VERBS = ["compress", "trim", "convert", "resize", "extract", "transcode", "ffmpeg"];
 
 interface Props {
   settings: Settings | null;
@@ -31,17 +31,47 @@ export function SimpleMode({ settings, onJobStart }: Props) {
 
   // Animated verb cycling
   const [verbIndex, setVerbIndex] = useState(0);
-  const [verbExiting, setVerbExiting] = useState(false);
+  const [verbStyle, setVerbStyle] = useState<React.CSSProperties>({ display: "inline-block" });
 
   useEffect(() => {
-    const t = setInterval(() => {
-      setVerbExiting(true);
-      setTimeout(() => {
+    const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
+    let swap: ReturnType<typeof setTimeout>;
+    let raf1: number, raf2: number;
+
+    const interval = setInterval(() => {
+      // 1. slide current word up and out
+      setVerbStyle({
+        display: "inline-block",
+        opacity: 0,
+        transform: "translateY(-20px)",
+        transition: "opacity 0.18s ease-in, transform 0.2s ease-in",
+      });
+
+      swap = setTimeout(() => {
+        // 2. swap text while invisible, snap to bottom entry position
         setVerbIndex((i) => (i + 1) % VERBS.length);
-        setVerbExiting(false);
-      }, 280);
+        setVerbStyle({ display: "inline-block", opacity: 0, transform: "translateY(20px)", transition: "none" });
+
+        // 3. after two frames (browser has painted the new position), slide in
+        raf1 = requestAnimationFrame(() => {
+          raf2 = requestAnimationFrame(() => {
+            setVerbStyle({
+              display: "inline-block",
+              opacity: 1,
+              transform: "translateY(0)",
+              transition: `opacity 0.4s ${EASING}, transform 0.4s ${EASING}`,
+            });
+          });
+        });
+      }, 220);
     }, 2800);
-    return () => clearInterval(t);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(swap);
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
   }, []);
 
   useEffect(() => {
@@ -85,20 +115,10 @@ export function SimpleMode({ settings, onJobStart }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-center min-h-[calc(100vh-100px)] gap-6 max-w-2xl mx-auto w-full pt-16">
+    <div className="flex flex-col items-center gap-6 max-w-2xl mx-auto w-full py-8">
       <h1 className="font-serif text-5xl text-[#E8E5DC] text-center leading-tight tracking-tight">
         Hello, ready to{" "}
-        <span
-          key={verbIndex}
-          className="text-accent"
-          style={{
-            display: "inline-block",
-            opacity: verbExiting ? 0 : 1,
-            transform: verbExiting ? "translateY(-5px)" : "translateY(0)",
-            transition: "opacity 0.28s ease, transform 0.28s ease",
-            animation: !verbExiting ? "word-enter 0.32s ease-out" : "none",
-          }}
-        >
+        <span className="text-accent" style={verbStyle}>
           {VERBS[verbIndex]}
         </span>
         ?
@@ -151,7 +171,7 @@ export function SimpleMode({ settings, onJobStart }: Props) {
       {showAdvanced && (
         <div className="w-full rounded-2xl border border-white/8 bg-surface overflow-hidden">
           <div className="px-5 py-4">
-            <AdvancedMode onJobStart={onJobStart} />
+            <AdvancedMode inputFile={file} outputPath={outputPath} onJobStart={onJobStart} />
           </div>
         </div>
       )}

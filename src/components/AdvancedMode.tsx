@@ -1,14 +1,8 @@
 import { useState } from "react";
-import { Play, FolderOpen } from "lucide-react";
+import { Play } from "lucide-react";
 import { FeatureButtons } from "./FeatureButtons";
 import { CommandEditor } from "./CommandEditor";
-import {
-  startJob,
-  pickVideoFile,
-  pickOutputFile,
-  probeFile,
-  type FileInfo,
-} from "@/lib/tauri";
+import { startJob, type FileInfo } from "@/lib/tauri";
 import { parseCommandArgs } from "@/lib/utils";
 import { applyPromptValues, type FeatureTemplate } from "@/lib/ffmpeg-args";
 
@@ -16,17 +10,17 @@ const DEFAULT_COMMAND =
   "ffmpeg -i {input} -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k {output}";
 
 interface Props {
+  inputFile: FileInfo | null;
+  outputPath: string;
   onJobStart: (jobId: string, outputPath: string) => void;
 }
 
-export function AdvancedMode({ onJobStart }: Props) {
+export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
   const [command, setCommand] = useState(DEFAULT_COMMAND);
   const [lastPresetCommand, setLastPresetCommand] = useState(DEFAULT_COMMAND);
   const [isDirty, setIsDirty] = useState(false);
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
 
-  const [inputFile, setInputFile] = useState<FileInfo | null>(null);
-  const [outputPath, setOutputPath] = useState("");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,22 +72,6 @@ export function AdvancedMode({ onJobStart }: Props) {
     setPendingTemplate(null);
     setPromptValues({});
     requestApply(cmd);
-  }
-
-  async function pickInput() {
-    const path = await pickVideoFile();
-    if (!path) return;
-    try {
-      const info = await probeFile(path);
-      setInputFile(info);
-    } catch {
-      setInputFile({ path, name: path.split(/[/\\]/).pop() ?? path, size: 0 });
-    }
-  }
-
-  async function pickOutput() {
-    const path = await pickOutputFile(outputPath || undefined);
-    if (path) setOutputPath(path);
   }
 
   async function handleRun() {
@@ -189,19 +167,6 @@ export function AdvancedMode({ onJobStart }: Props) {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <FilePicker_Mini
-          label="Input"
-          path={inputFile?.name ?? null}
-          onClick={pickInput}
-        />
-        <FilePicker_Mini
-          label="Output"
-          path={outputPath ? outputPath.split(/[/\\]/).pop() ?? outputPath : null}
-          onClick={pickOutput}
-        />
-      </div>
-
       {error && (
         <p className="text-sm text-red-400">{error}</p>
       )}
@@ -209,7 +174,7 @@ export function AdvancedMode({ onJobStart }: Props) {
       <button
         onClick={handleRun}
         disabled={!inputFile || !outputPath || running}
-        className="flex items-center justify-center gap-2 py-2.5 rounded-[10px] text-sm font-medium text-white bg-accent hover:bg-accent/85 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-accent/20"
+        className="flex items-center justify-center gap-2 py-2.5 rounded-[10px] text-sm font-medium text-white bg-accent hover:bg-accent/85 disabled:opacity-30 disabled:cursor-not-allowed transition-all "
       >
         <Play className="w-4 h-4" />
         {running ? "Starting…" : "Run"}
@@ -218,27 +183,3 @@ export function AdvancedMode({ onJobStart }: Props) {
   );
 }
 
-function FilePicker_Mini({
-  label,
-  path,
-  onClick,
-}: {
-  label: string;
-  path: string | null;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] border border-white/8 bg-[#1A1A18] hover:border-white/15 transition-colors text-left"
-    >
-      <FolderOpen className="w-4 h-4 text-muted flex-shrink-0" />
-      <div className="min-w-0">
-        <p className="text-xs text-muted">{label}</p>
-        <p className="text-sm text-[#E8E5DC] truncate">
-          {path ?? "Choose file…"}
-        </p>
-      </div>
-    </button>
-  );
-}

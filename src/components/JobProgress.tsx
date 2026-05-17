@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { X, ChevronDown, ChevronUp, FolderOpen, RotateCcw } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, FolderOpen, RotateCcw, X } from "lucide-react";
 import { cn, formatBytes, formatEta } from "@/lib/utils";
 import {
   onJobProgress,
@@ -10,8 +10,58 @@ import {
   type JobProgressEvent,
   type JobDoneEvent,
 } from "@/lib/tauri";
-import * as Progress from "@radix-ui/react-progress";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
+
+const PHASE_WORDS = {
+  analysis: [
+    "Probing", "Inspecting", "Scanning", "Reading", "Parsing",
+    "Sniffing", "Examining", "Surveying", "Demuxing", "Decoding",
+    "Detecting", "Identifying", "Measuring",
+  ],
+  planning: [
+    "Planning", "Choosing", "Selecting", "Mapping", "Routing",
+    "Configuring", "Preparing", "Calibrating", "Negotiating",
+  ],
+  encoding: [
+    "Encoding", "Transcoding", "Processing", "Crunching", "Compressing",
+    "Rendering", "Computing", "Working", "Running", "Churning", "Grinding",
+    "Cooking", "Chewing", "Munching",
+    "Filtering", "Scaling", "Resampling", "Resizing", "Cropping",
+    "Trimming", "Stretching", "Sharpening", "Denoising", "Deinterlacing",
+    "Interpolating", "Quantizing", "Sampling", "Buffering", "Streaming",
+    "Threading", "Piping", "Flowing",
+    "Mixing", "Remixing", "Normalizing", "Syncing", "Aligning", "Dithering",
+    "Muxing", "Remuxing", "Packaging", "Containing", "Assembling",
+    "Stitching", "Merging", "Concatenating",
+    "Brewing", "Wrangling", "Coaxing", "Massaging", "Nudging",
+    "Tinkering", "Whispering", "Persuading", "Hustling", "Shuffling",
+  ],
+  finishing: [
+    "Finalizing", "Flushing", "Sealing", "Writing", "Saving",
+    "Verifying", "Validating", "Checking", "Polishing", "Closing",
+  ],
+};
+
+function getPool(pct: number): string[] {
+  if (pct < 3) return PHASE_WORDS.analysis;
+  if (pct < 10) return PHASE_WORDS.planning;
+  if (pct >= 93) return PHASE_WORDS.finishing;
+  return PHASE_WORDS.encoding;
+}
+
+function StarIcon() {
+  return (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 10 10"
+      fill="currentColor"
+      className="text-accent animate-star flex-shrink-0"
+    >
+      <path d="M5 0 L5.6 4.4 L10 5 L5.6 5.6 L5 10 L4.4 5.6 L0 5 L4.4 4.4 Z" />
+    </svg>
+  );
+}
 
 interface Props {
   jobId: string;
@@ -40,6 +90,54 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
   const [logOpen, setLogOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
+
+  const [word, setWord] = useState("Probing");
+  const [wordStyle, setWordStyle] = useState<React.CSSProperties>({ display: "inline-block" });
+  const progressRef = useRef(0);
+
+  useEffect(() => {
+    progressRef.current = progress.percentage;
+  }, [progress.percentage]);
+
+  useEffect(() => {
+    if (done) return;
+
+    const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
+    let swap: ReturnType<typeof setTimeout>;
+    let raf1: number, raf2: number;
+
+    const interval = setInterval(() => {
+      setWordStyle({
+        display: "inline-block",
+        opacity: 0,
+        transition: "opacity 0.18s ease-in",
+      });
+
+      swap = setTimeout(() => {
+        const pool = getPool(progressRef.current);
+        const next = pool[Math.floor(Math.random() * pool.length)];
+        setWord(next);
+        setWordStyle({ display: "inline-block", opacity: 0, transition: "none" });
+
+        raf1 = requestAnimationFrame(() => {
+          raf2 = requestAnimationFrame(() => {
+            setWordStyle({
+              display: "inline-block",
+              opacity: 1,
+              transition: `opacity 0.5s ${EASING}`,
+            });
+          });
+        });
+      }, 220);
+    }, 2200);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(swap);
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [done]);
 
   useEffect(() => {
     const unlistens = [
@@ -90,86 +188,64 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
   const isFailed = isDone && !isSuccess && !isCancelled;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Status header */}
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {isCancelled
-              ? "Cancelled"
-              : isFailed
-              ? "Failed"
-              : isSuccess
-              ? "Done"
-              : "Encoding…"}
-          </span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {isDone ? "100" : progress.percentage.toFixed(1)}%
-          </span>
+    <div className="flex flex-col items-center gap-6 max-w-2xl mx-auto w-full py-8">
+     
+      {/* Status word */}
+      {!isDone ? (
+        <div className="flex items-center gap-2 justify-center">
+          <StarIcon />
+          <p className="font-serif text-xl text-accent leading-tight" style={wordStyle}>
+            {word}…
+          </p>
         </div>
+      ) : (
+        <p className="font-serif text-5xl text-[#E8E5DC] leading-tight tracking-tight">
+          {isSuccess ? "Done." : isCancelled ? "Cancelled." : "Failed."}
+        </p>
+      )}
 
-        <Progress.Root
-          value={isDone ? 100 : progress.percentage}
-          className="h-3 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
-        >
-          <Progress.Indicator
-            className={cn(
-              "h-full rounded-full transition-all duration-300",
-              isFailed || isCancelled
-                ? "bg-red-500"
-                : isSuccess
-                ? "bg-green-500"
-                : "bg-green-500",
-            )}
-            style={{ width: `${isDone ? 100 : progress.percentage}%` }}
-          />
-        </Progress.Root>
-      </div>
-
-      {/* Stats row */}
+      {/* Live stats */}
       {!isDone && (
-        <div className="grid grid-cols-3 gap-4 text-sm">
-          <Stat label="Speed" value={progress.speed > 0 ? `${progress.speed.toFixed(1)}×` : "—"} />
-          <Stat label="ETA" value={formatEta(progress.etaSecs)} />
-          <Stat label="Size so far" value={formatBytes(progress.totalSize)} />
-        </div>
-      )}
-
-      {/* Done state */}
-      {isDone && (
-        <div
-          className={cn(
-            "rounded-xl border p-4 text-sm",
-            isSuccess
-              ? "border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800 text-green-800 dark:text-green-300"
-              : "border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800 text-red-800 dark:text-red-300",
-          )}
-        >
-          {isSuccess && (
+        <div className="flex items-center gap-3 text-sm text-muted">
+          <span>{progress.percentage.toFixed(1)}%</span>
+          {progress.etaSecs > 0 && (
             <>
-              <p className="font-medium mb-1">Conversion complete</p>
-              <p className="text-xs break-all opacity-75">{outputPath}</p>
+              <span className="opacity-20">·</span>
+              <span>{formatEta(progress.etaSecs)} left</span>
             </>
           )}
-          {isCancelled && <p className="font-medium">Job was cancelled.</p>}
-          {isFailed && (
+          {progress.fps > 0 && (
             <>
-              <p className="font-medium mb-1">Encoding failed</p>
-              {done?.error && (
-                <p className="text-xs font-mono break-all opacity-75">{done.error}</p>
-              )}
+              <span className="opacity-20">·</span>
+              <span>{Math.round(progress.fps)} fps</span>
+            </>
+          )}
+          {progress.totalSize > 0 && (
+            <>
+              <span className="opacity-20">·</span>
+              <span>{formatBytes(progress.totalSize)}</span>
             </>
           )}
         </div>
       )}
 
-      {/* Action buttons */}
+      {/* Success path */}
+      {isSuccess && (
+        <p className="text-sm text-muted text-center max-w-sm break-all px-2">{outputPath}</p>
+      )}
+
+      {/* Error detail */}
+      {isFailed && done?.error && (
+        <p className="text-sm text-red-400 font-mono text-center max-w-sm break-all px-2">{done.error}</p>
+      )}
+
+      {/* Actions */}
       <div className="flex gap-3">
         {!isDone && (
           <button
             onClick={handleCancel}
             disabled={cancelling}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-sm text-muted hover:text-[#E8E5DC] hover:border-white/25 transition-colors disabled:opacity-40"
           >
             <X className="w-4 h-4" />
             Cancel
@@ -177,8 +253,15 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
         )}
         {isSuccess && (
           <button
-            onClick={() => openPath(outputPath.split(/(\\|\/)/).slice(0, -1).join(outputPath.includes("\\") ? "\\" : "/"))}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-green-300 dark:border-green-700 text-green-700 dark:text-green-400 text-sm font-medium hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors"
+            onClick={() =>
+              openPath(
+                outputPath
+                  .split(/(\\|\/)/)
+                  .slice(0, -1)
+                  .join(outputPath.includes("\\") ? "\\" : "/"),
+              )
+            }
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-accent/50 text-sm text-accent bg-accent/10 hover:bg-accent/15 transition-colors"
           >
             <FolderOpen className="w-4 h-4" />
             Open folder
@@ -186,26 +269,26 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
         )}
         <button
           onClick={onBack}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-sm text-[#E8E5DC] hover:bg-white/5 transition-colors"
         >
           <RotateCcw className="w-4 h-4" />
           {isDone ? "Convert another" : "Background"}
         </button>
       </div>
 
-      {/* Collapsible log */}
-      <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+      {/* Log */}
+      <div className="w-full rounded-2xl border border-white/8 overflow-hidden">
         <button
           onClick={() => setLogOpen((o) => !o)}
-          className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+          className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-muted hover:text-[#E8E5DC] transition-colors"
         >
           <span>ffmpeg log</span>
           {logOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
         {logOpen && (
-          <ScrollArea.Root className="h-48 border-t border-gray-200 dark:border-gray-700">
+          <ScrollArea.Root className="h-48 border-t border-white/8">
             <ScrollArea.Viewport className="w-full h-full">
-              <div className="p-3 font-mono text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+              <div className="p-3 font-mono text-xs text-muted space-y-0.5">
                 {logLines.map((line, i) => (
                   <div key={i} className="break-all leading-relaxed">
                     {line}
@@ -215,20 +298,11 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
               </div>
             </ScrollArea.Viewport>
             <ScrollArea.Scrollbar orientation="vertical" className="w-1.5 p-0.5">
-              <ScrollArea.Thumb className="bg-gray-300 dark:bg-gray-600 rounded-full" />
+              <ScrollArea.Thumb className="bg-white/20 rounded-full" />
             </ScrollArea.Scrollbar>
           </ScrollArea.Root>
         )}
       </div>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-3 py-2.5">
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{label}</p>
-      <p className="font-medium text-gray-900 dark:text-gray-100">{value}</p>
     </div>
   );
 }

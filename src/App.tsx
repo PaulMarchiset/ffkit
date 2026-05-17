@@ -70,7 +70,7 @@ export default function App() {
           <button
             onClick={() => setView(isSettings ? "main" : "settings")}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-full border text-sm transition-colors",
+              "flex items-center gap-2 px-4 py-2 rounded-md border text-sm transition-colors",
               isSettings
                 ? "border-accent/50 text-accent bg-accent/10"
                 : "border-white/15 text-[#E8E5DC] hover:bg-white/5",
@@ -82,7 +82,7 @@ export default function App() {
 
           <button
             onClick={() => openUrl("https://ffmpeg.org/documentation.html")}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-sm text-[#E8E5DC] hover:bg-white/5 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-md border border-white/15 text-sm text-[#E8E5DC] hover:bg-white/5 transition-colors"
           >
             <BookIcon />
             Documentation
@@ -90,8 +90,8 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col min-h-0 overflow-y-auto">
-        <div className="px-7 py-4 flex-1">
+      <main className="flex-1 min-h-0 overflow-y-auto">
+        <div className="min-h-full px-7 py-4 flex flex-col justify-center">
           {showProgress && activeJob ? (
             <JobProgress
               jobId={activeJob.id}

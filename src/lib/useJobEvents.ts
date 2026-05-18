@@ -42,9 +42,25 @@ export function useJobEvents(jobId: string): JobEvents {
   const [logLines, setLogLines] = useState<string[]>([]);
 
   useEffect(() => {
-    const unlistens = [
+    // Two-layer race defense for the Tauri `listen()` lifecycle: the listener
+    // is registered synchronously by the IPC layer, but the unlisten fn is
+    // only returned via Promise. (1) `cancelled` blocks setState if a late
+    // event fires between unmount and unlisten resolving. (2) Any unlisten
+    // that resolves after cleanup is invoked immediately so a registration
+    // can never outlive the effect.
+    let cancelled = false;
+    const unlistens: Array<() => void> = [];
+
+    const track = (p: Promise<() => void>) => {
+      p.then((u) => {
+        if (cancelled) u();
+        else unlistens.push(u);
+      });
+    };
+
+    track(
       onJobProgress((e: JobProgressEvent) => {
-        if (e.jobId !== jobId) return;
+        if (cancelled || e.jobId !== jobId) return;
         setProgress({
           percentage: e.percentage,
           speed: e.speed,
@@ -53,18 +69,23 @@ export function useJobEvents(jobId: string): JobEvents {
           fps: e.fps,
         });
       }),
+    );
+    track(
       onJobDone((e: JobDoneEvent) => {
-        if (e.jobId !== jobId) return;
+        if (cancelled || e.jobId !== jobId) return;
         setDone(e);
       }),
+    );
+    track(
       onJobLog((e) => {
-        if (e.jobId !== jobId) return;
+        if (cancelled || e.jobId !== jobId) return;
         setLogLines((prev) => [...prev.slice(-(LOG_BUFFER_SIZE - 1)), e.line]);
       }),
-    ];
+    );
 
     return () => {
-      Promise.all(unlistens).then((fns) => fns.forEach((f) => f()));
+      cancelled = true;
+      for (const u of unlistens) u();
     };
   }, [jobId]);
 

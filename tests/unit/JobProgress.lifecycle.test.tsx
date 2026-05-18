@@ -4,11 +4,12 @@ import { JobProgress } from "@/components/JobProgress";
 import { __tauriMock } from "@/test/mocks/tauri";
 
 function flush() {
-  // Two microtask ticks to drain the Promise.all in JobProgress's cleanup.
+  // One microtask tick to drain the Promise.then in useJobEvents that pushes
+  // unlisten fns into the cleanup list once `listen()` resolves.
   return new Promise<void>((resolve) => setTimeout(resolve, 0));
 }
 
-describe("JobProgress — event listener lifecycle (D2 baseline)", () => {
+describe("JobProgress — event listener lifecycle (D2 closed)", () => {
   beforeEach(() => {
     __tauriMock.resetInvokeResponses();
   });
@@ -21,7 +22,7 @@ describe("JobProgress — event listener lifecycle (D2 baseline)", () => {
     expect(__tauriMock.listenerCount("job-log")).toBe(1);
   });
 
-  it("unsubscribes all three on unmount", async () => {
+  it("drops all three listeners synchronously on unmount", async () => {
     const { unmount } = render(
       <JobProgress jobId="J2" outputPath="/tmp/out.mp4" onBack={() => {}} />,
     );
@@ -29,9 +30,9 @@ describe("JobProgress — event listener lifecycle (D2 baseline)", () => {
     expect(__tauriMock.listenerCount("job-progress")).toBe(1);
 
     unmount();
-    await flush();
-    await flush();
 
+    // Contract after D2 fix: unlisten runs synchronously inside cleanup,
+    // no microtask drain required.
     expect(__tauriMock.listenerCount("job-progress")).toBe(0);
     expect(__tauriMock.listenerCount("job-done")).toBe(0);
     expect(__tauriMock.listenerCount("job-log")).toBe(0);
@@ -90,20 +91,50 @@ describe("JobProgress — event listener lifecycle (D2 baseline)", () => {
     expect(screen.getByText("Done.")).toBeInTheDocument();
   });
 
-  it("documents the D2 race: events fired after unmount before unlisten resolves still hit registered listeners", async () => {
+  it("unlisten that resolves after cleanup runs immediately (unmount-before-listen-resolves race)", async () => {
+    // Don't flush before unmount — useEffect has run and the listener is
+    // already in the mock's set (set.add happens synchronously inside the
+    // async listen()), but the unlisten Promise hasn't settled yet, so the
+    // unlistens[] array in useJobEvents is still empty.
     const { unmount } = render(
       <JobProgress jobId="J6" outputPath="/tmp/out.mp4" onBack={() => {}} />,
     );
-    await flush();
     expect(__tauriMock.listenerCount("job-progress")).toBe(1);
 
     unmount();
-    // Synchronously after unmount, before microtasks drain, listeners
-    // are still registered — this is the D2 race that Phase 3 will close.
+    // Cleanup ran but unlistens[] was empty — listener still registered.
     expect(__tauriMock.listenerCount("job-progress")).toBe(1);
 
-    await flush();
+    // Once the listen() Promises resolve, the .then sees cancelled=true and
+    // calls each unlisten immediately.
     await flush();
     expect(__tauriMock.listenerCount("job-progress")).toBe(0);
+    expect(__tauriMock.listenerCount("job-done")).toBe(0);
+    expect(__tauriMock.listenerCount("job-log")).toBe(0);
+  });
+
+  it("emit after unmount is a no-op (no listeners, no errors)", async () => {
+    const { unmount } = render(
+      <JobProgress jobId="J7" outputPath="/tmp/out.mp4" onBack={() => {}} />,
+    );
+    await flush();
+    unmount();
+
+    // After D2 fix the listener slot is empty, so emit just dispatches to
+    // nobody. This guards against future regressions that re-introduce
+    // dangling subscriptions.
+    expect(() =>
+      __tauriMock.emit("job-progress", {
+        jobId: "J7",
+        frame: 0,
+        fps: 0,
+        speed: 0,
+        outTimeMs: 0,
+        totalSize: 0,
+        percentage: 99.9,
+        etaSecs: 0,
+        done: false,
+      }),
+    ).not.toThrow();
   });
 });

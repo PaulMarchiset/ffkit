@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Zap, Loader2 } from "lucide-react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { cn, formatBytes, formatDuration } from "@/lib/utils";
@@ -23,29 +23,37 @@ export function FilePicker({ file, onFile, onConvert, converting }: Props) {
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const unlistenRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
+    // Same two-layer race defense as useJobEvents — see comment there.
+    let cancelled = false;
+    let unlisten: (() => void) | null = null;
+
     const win = getCurrentWebviewWindow();
-    win.onDragDropEvent(async (event) => {
-      const evtType = event.payload.type as string;
-      if (evtType === "over" || evtType === "enter") {
-        setDragging(true);
-      } else if (evtType === "leave" || evtType === "cancel") {
-        setDragging(false);
-      } else if (evtType === "drop") {
-        setDragging(false);
-        const paths = (event.payload as { type: string; paths: string[] }).paths;
-        if (paths && paths.length > 0) {
-          await loadFile(paths[0]);
+    win
+      .onDragDropEvent(async (event) => {
+        if (cancelled) return;
+        const evtType = event.payload.type as string;
+        if (evtType === "over" || evtType === "enter") {
+          setDragging(true);
+        } else if (evtType === "leave" || evtType === "cancel") {
+          setDragging(false);
+        } else if (evtType === "drop") {
+          setDragging(false);
+          const paths = (event.payload as { type: string; paths: string[] }).paths;
+          if (paths && paths.length > 0) {
+            await loadFile(paths[0]);
+          }
         }
-      }
-    }).then((unlisten) => {
-      unlistenRef.current = unlisten;
-    });
+      })
+      .then((u) => {
+        if (cancelled) u();
+        else unlisten = u;
+      });
 
     return () => {
-      unlistenRef.current?.();
+      cancelled = true;
+      unlisten?.();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

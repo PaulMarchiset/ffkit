@@ -27,20 +27,62 @@
   --font-sans: "PP Mori", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Use local installed fonts first, then file fallback if user adds them to src/assets/fonts/ */
+/* Bundled fonts live in public/assets/fonts/ — they ship inside the Tauri build.
+   local(...) lets us prefer a system-installed copy if present. */
 @font-face {
   font-family: "Sirba";
-  src: local("Sirba"), url("/assets/fonts/Sirba.woff2") format("woff2"),
-       url("/assets/fonts/Sirba.woff") format("woff");
-  font-weight: 100 900;
+  src: local("Sirba"), url("/assets/fonts/Sirba-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
   font-display: swap;
 }
 
 @font-face {
   font-family: "PP Mori";
-  src: local("PP Mori"), local("PPMori"), url("/assets/fonts/PPMori.woff2") format("woff2"),
-       url("/assets/fonts/PPMori.woff") format("woff");
-  font-weight: 100 900;
+  src: local("PP Mori Extralight"), local("PPMori-Extralight"),
+       url("/assets/fonts/PPMori-Extralight.otf") format("opentype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "PP Mori";
+  src: local("PP Mori Extralight Italic"), local("PPMori-ExtralightItalic"),
+       url("/assets/fonts/PPMori-ExtralightItalic.otf") format("opentype");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "PP Mori";
+  src: local("PP Mori"), local("PPMori-Regular"),
+       url("/assets/fonts/PPMori-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "PP Mori";
+  src: local("PP Mori Italic"), local("PPMori-RegularItalic"),
+       url("/assets/fonts/PPMori-RegularItalic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "PP Mori";
+  src: local("PP Mori SemiBold"), local("PPMori-SemiBold"),
+       url("/assets/fonts/PPMori-SemiBold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "PP Mori";
+  src: local("PP Mori SemiBold Italic"), local("PPMori-SemiBoldItalic"),
+       url("/assets/fonts/PPMori-SemiBoldItalic.otf") format("opentype");
+  font-weight: 600;
+  font-style: italic;
   font-display: swap;
 }
 

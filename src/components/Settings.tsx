@@ -44,7 +44,7 @@ export function SettingsPanel({ onBack }: Props) {
 
   if (!settings) {
     return (
-      <div className="flex items-center justify-center h-40 text-gray-400 text-sm">
+      <div className="flex items-center justify-center h-40 text-muted text-sm">
         Loading…
       </div>
     );
@@ -54,7 +54,7 @@ export function SettingsPanel({ onBack }: Props) {
     <div className="flex flex-col gap-6">
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors w-fit"
+        className="flex items-center gap-2 text-sm text-muted hover:text-fg transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
         Back
@@ -65,12 +65,12 @@ export function SettingsPanel({ onBack }: Props) {
         <Section title="Output">
           <Row label="Default output folder">
             <div className="flex gap-2 items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-48">
+              <span className="text-sm text-muted truncate max-w-48">
                 {settings.outputFolder ?? "Same as input"}
               </span>
               <button
                 onClick={handlePickFolder}
-                className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-1.5 rounded-lg border border-border-soft text-muted hover:bg-white/5 transition-colors"
               >
                 <FolderOpen className="w-4 h-4" />
               </button>
@@ -89,7 +89,7 @@ export function SettingsPanel({ onBack }: Props) {
               type="text"
               value={settings.outputNaming}
               onChange={(e) => setLocal({ ...settings, outputNaming: e.target.value })}
-              className="w-48 px-2 py-1 text-sm rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 outline-none focus:border-green-500"
+              className="w-48 px-2 py-1 text-sm rounded-md border border-border-soft bg-bg text-fg outline-none focus:border-accent/50"
             />
           </Row>
         </Section>
@@ -160,7 +160,7 @@ export function SettingsPanel({ onBack }: Props) {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="self-start px-6 py-2.5 rounded-xl font-semibold text-white bg-green-500 hover:bg-green-600 disabled:opacity-50 transition-colors"
+        className="self-start px-6 py-2.5 rounded-xl font-semibold text-white bg-accent hover:bg-accent/85 disabled:opacity-50 transition-colors"
       >
         {saved ? "Saved!" : saving ? "Saving…" : "Save settings"}
       </button>
@@ -171,7 +171,7 @@ export function SettingsPanel({ onBack }: Props) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+      <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">
         {title}
       </h3>
       <div className="space-y-3">{children}</div>
@@ -182,7 +182,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+      <span className="text-sm text-subtle">{label}</span>
       {children}
     </div>
   );
@@ -201,7 +201,7 @@ function Select({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="px-2 py-1 text-sm rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 outline-none focus:border-green-500"
+      className="px-2 py-1 text-sm rounded-md border border-border-soft bg-bg text-fg outline-none focus:border-accent/50"
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>
@@ -219,7 +219,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
       aria-checked={value}
       onClick={() => onChange(!value)}
       className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${
-        value ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"
+        value ? "bg-accent" : "bg-white/20"
       }`}
     >
       <span

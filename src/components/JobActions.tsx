@@ -19,7 +19,7 @@ export function JobActions({ status, cancelling, outputPath, onCancel, onBack }:
         <button
           onClick={onCancel}
           disabled={cancelling}
-          className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-sm text-muted hover:text-[#E8E5DC] hover:border-white/25 transition-colors disabled:opacity-40"
+          className="flex items-center gap-2 px-4 py-2 rounded-full border border-border-strong text-sm text-muted hover:text-fg hover:border-white/25 transition-colors disabled:opacity-40"
         >
           <X className="w-4 h-4" />
           Cancel
@@ -36,7 +36,7 @@ export function JobActions({ status, cancelling, outputPath, onCancel, onBack }:
       )}
       <button
         onClick={onBack}
-        className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-sm text-[#E8E5DC] hover:bg-white/5 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 rounded-full border border-border-strong text-sm text-fg hover:bg-white/5 transition-colors"
       >
         <RotateCcw className="w-4 h-4" />
         {isDone ? "Convert another" : "Background"}

@@ -7,6 +7,22 @@
   --color-surface: #232320;
   --color-muted: #87867E;
   --color-subtle: #C0BFB5;
+
+  /* P4: neutrals — exact hex values previously inlined as arbitrary
+     Tailwind classes (bg-[#1A1A18], text-[#E8E5DC], bg-[#141412]). */
+  --color-bg: #1A1A18;
+  --color-fg: #E8E5DC;
+  --color-surface-2: #141412;
+
+  /* P4: alpha-on-dark borders — exact alphas previously inlined as
+     border-white/N. Utility names follow shadcn convention
+     (border-border-soft, etc). bg-white/N kept untouched. */
+  --color-border-subtle: rgb(255 255 255 / 5%);
+  --color-border-soft:   rgb(255 255 255 / 8%);
+  --color-border:        rgb(255 255 255 / 10%);
+  --color-border-strong: rgb(255 255 255 / 15%);
+  --color-border-hover:  rgb(255 255 255 / 20%);
+
   --font-serif: "Sirba", Georgia, "Times New Roman", serif;
   --font-sans: "PP Mori", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -50,8 +66,8 @@
 
   html {
     font-family: "PP Mori", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #1A1A18;
-    color: #E8E5DC;
+    background-color: var(--color-bg);
+    color: var(--color-fg);
     color-scheme: dark;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

@@ -68,8 +68,8 @@ function QualityPill({
       className={cn(
         "flex items-center gap-2 px-4 py-2 rounded-[10px] border text-sm transition-all",
         selected
-          ? "border-accent/60 text-[#E8E5DC] bg-accent/10"
-          : "border-white/10 text-subtle hover:border-white/20 hover:text-[#E8E5DC] bg-transparent",
+          ? "border-accent/60 text-fg bg-accent/10"
+          : "border-border text-subtle hover:border-border-hover hover:text-fg bg-transparent",
       )}
     >
       <span className={cn("flex-shrink-0 transition-colors", selected ? "text-accent" : "text-subtle")}>

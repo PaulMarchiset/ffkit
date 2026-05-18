@@ -17,16 +17,16 @@ export function JobLog({ lines }: Props) {
   }, [lines, open]);
 
   return (
-    <div className="w-full rounded-2xl border border-white/8 overflow-hidden">
+    <div className="w-full rounded-2xl border border-border-soft overflow-hidden">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-muted hover:text-[#E8E5DC] transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-muted hover:text-fg transition-colors"
       >
         <span>ffmpeg log</span>
         {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
       </button>
       {open && (
-        <ScrollArea.Root className="h-48 border-t border-white/8">
+        <ScrollArea.Root className="h-48 border-t border-border-soft">
           <ScrollArea.Viewport className="w-full h-full">
             <div className="p-3 font-mono text-xs text-muted space-y-0.5">
               {lines.map((line, i) => (

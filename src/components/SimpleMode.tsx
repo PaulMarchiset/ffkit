@@ -70,7 +70,7 @@ export function SimpleMode({ settings, onJobStart }: Props) {
 
   return (
     <div className="flex flex-col items-center gap-6 max-w-2xl mx-auto w-full py-8">
-      <h1 className="font-serif text-5xl text-[#E8E5DC] text-center leading-tight tracking-tight">
+      <h1 className="font-serif text-5xl text-fg text-center leading-tight tracking-tight">
         Hello, ready to{" "}
         <span className="text-accent">
           {displayedVerb}
@@ -92,7 +92,7 @@ export function SimpleMode({ settings, onJobStart }: Props) {
           <div className="flex justify-end">
             <button
               onClick={() => setShowAdvanced((v) => !v)}
-              className="flex items-center gap-1 px-4 py-2 text-sm text-muted hover:text-[#E8E5DC] transition-colors"
+              className="flex items-center gap-1 px-4 py-2 text-sm text-muted hover:text-fg transition-colors"
             >
               Advanced
               {showAdvanced ? (
@@ -106,12 +106,12 @@ export function SimpleMode({ settings, onJobStart }: Props) {
 
         {file && (
           <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1 px-3 py-2 rounded-xl border border-white/8 bg-surface text-sm text-muted truncate">
+            <div className="min-w-0 flex-1 px-3 py-2 rounded-xl border border-border-soft bg-surface text-sm text-muted truncate">
               {outputPath || "—"}
             </div>
             <button
               onClick={handleChangeOutput}
-              className="flex-shrink-0 p-2 rounded-xl border border-white/8 text-muted hover:text-[#E8E5DC] hover:border-white/15 transition-colors"
+              className="flex-shrink-0 p-2 rounded-xl border border-border-soft text-muted hover:text-fg hover:border-border-strong transition-colors"
               title="Change output path"
             >
               <FolderOpen className="w-4 h-4" />
@@ -125,7 +125,7 @@ export function SimpleMode({ settings, onJobStart }: Props) {
       </div>
 
       {showAdvanced && (
-        <div className="w-full rounded-2xl border border-white/8 bg-surface overflow-hidden">
+        <div className="w-full rounded-2xl border border-border-soft bg-surface overflow-hidden">
           <div className="px-5 py-4">
             <AdvancedMode inputFile={file} outputPath={outputPath} onJobStart={onJobStart} />
           </div>

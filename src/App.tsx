@@ -52,7 +52,7 @@ export default function App() {
   const isSettings = view === "settings";
 
   return (
-    <div className="dark min-h-screen bg-[#1A1A18] text-[#E8E5DC] flex flex-col">
+    <div className="dark min-h-screen bg-bg text-fg flex flex-col">
       <header className="flex items-center justify-between px-7 py-5 flex-shrink-0">
         <div className="flex items-center gap-3">
           <FFKitLogo />
@@ -73,7 +73,7 @@ export default function App() {
               "flex items-center gap-2 px-4 py-2 rounded-md border text-sm transition-colors",
               isSettings
                 ? "border-accent/50 text-accent bg-accent/10"
-                : "border-white/15 text-[#E8E5DC] hover:bg-white/5",
+                : "border-border-strong text-fg hover:bg-white/5",
             )}
           >
             <SettingsIcon className="w-4 h-4" />
@@ -82,7 +82,7 @@ export default function App() {
 
           <button
             onClick={() => openUrl("https://ffmpeg.org/documentation.html")}
-            className="flex items-center gap-2 px-4 py-2 rounded-md border border-white/15 text-sm text-[#E8E5DC] hover:bg-white/5 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-md border border-border-strong text-sm text-fg hover:bg-white/5 transition-colors"
           >
             <BookIcon />
             Documentation

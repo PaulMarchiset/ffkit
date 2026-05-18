@@ -17,7 +17,7 @@ export function CommandEditor({ command, onChange, onReset, isDirty }: Props) {
         {isDirty && (
           <button
             onClick={onReset}
-            className="flex items-center gap-1 text-xs text-muted hover:text-[#E8E5DC] transition-colors"
+            className="flex items-center gap-1 text-xs text-muted hover:text-fg transition-colors"
           >
             <RotateCcw className="w-3 h-3" />
             Reset
@@ -29,7 +29,7 @@ export function CommandEditor({ command, onChange, onReset, isDirty }: Props) {
         onChange={(e) => onChange(e.target.value)}
         spellCheck={false}
         rows={4}
-        className="w-full px-3 py-2.5 rounded-[10px] border border-white/8 bg-[#141412] text-accent font-mono text-sm resize-none outline-none focus:border-accent/40 transition-colors"
+        className="w-full px-3 py-2.5 rounded-[10px] border border-border-soft bg-surface-2 text-accent font-mono text-sm resize-none outline-none focus:border-accent/40 transition-colors"
         placeholder="ffmpeg -i {input} ... {output}"
       />
       <p className="text-xs text-muted">

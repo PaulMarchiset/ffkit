@@ -28,7 +28,7 @@ export function PromptTemplatePanel({
               placeholder={p.placeholder}
               value={values[p.key] ?? ""}
               onChange={(e) => onValueChange(p.key, e.target.value)}
-              className="w-full px-2 py-1.5 text-sm rounded-[8px] border border-white/10 bg-[#1A1A18] text-[#E8E5DC] outline-none focus:border-accent/50 transition-colors"
+              className="w-full px-2 py-1.5 text-sm rounded-[8px] border border-border bg-bg text-fg outline-none focus:border-accent/50 transition-colors"
             />
           </div>
         ))}
@@ -42,7 +42,7 @@ export function PromptTemplatePanel({
         </button>
         <button
           onClick={onCancel}
-          className="px-3 py-1.5 text-xs font-medium rounded-[8px] border border-white/10 text-muted hover:text-[#E8E5DC] hover:border-white/20 transition-colors"
+          className="px-3 py-1.5 text-xs font-medium rounded-[8px] border border-border text-muted hover:text-fg hover:border-border-hover transition-colors"
         >
           Cancel
         </button>

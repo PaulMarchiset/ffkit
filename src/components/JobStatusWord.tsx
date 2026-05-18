@@ -17,7 +17,7 @@ export function JobStatusWord({ displayedWord, terminalText }: Props) {
     );
   }
   return (
-    <p className="font-serif text-2xl text-[#E8E5DC] leading-tight">
+    <p className="font-serif text-2xl text-fg leading-tight">
       {terminalText}
     </p>
   );

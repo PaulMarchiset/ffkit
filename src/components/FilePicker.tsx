@@ -79,7 +79,7 @@ export function FilePicker({ file, onFile, onConvert, converting }: Props) {
   if (file) {
     return (
       <div
-        className="relative w-full rounded-2xl bg-surface border border-white/5 px-5 py-7 cursor-pointer group hover:border-white/10 transition-all"
+        className="relative w-full rounded-2xl bg-surface border border-border-subtle px-5 py-7 cursor-pointer group hover:border-border transition-all"
         onClick={handleClick}
       >
         <div className="flex items-center gap-4 pr-14">
@@ -89,7 +89,7 @@ export function FilePicker({ file, onFile, onConvert, converting }: Props) {
             </svg>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-[#E8E5DC] truncate text-sm">{file.name}</p>
+            <p className="font-medium text-fg truncate text-sm">{file.name}</p>
             <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
               <span>{formatBytes(file.size)}</span>
               {file.duration != null && <span>{formatDuration(file.duration)}</span>}
@@ -129,8 +129,8 @@ export function FilePicker({ file, onFile, onConvert, converting }: Props) {
     <div
       className={cn(
         "relative w-full rounded-2xl bg-surface flex flex-col items-center justify-center gap-3 transition-all cursor-pointer",
-        "border border-white/5",
-        dragging ? "border-accent/50 bg-accent/5" : "hover:border-white/10",
+        "border border-border-subtle",
+        dragging ? "border-accent/50 bg-accent/5" : "hover:border-border",
         loading && "opacity-60 pointer-events-none",
       )}
       style={{ minHeight: "160px" }}
@@ -141,7 +141,7 @@ export function FilePicker({ file, onFile, onConvert, converting }: Props) {
       {loading ? (
         <p className="text-muted text-sm">Reading file…</p>
       ) : (
-        <p className={cn("text-sm transition-colors", dragging ? "text-[#E8E5DC]" : "text-muted")}>
+        <p className={cn("text-sm transition-colors", dragging ? "text-fg" : "text-muted")}>
           {dragging ? "Drop your video" : "Drop your video here"}
         </p>
       )}

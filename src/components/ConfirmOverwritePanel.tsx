@@ -18,7 +18,7 @@ export function ConfirmOverwritePanel({ visible, onReplace, onCancel }: Props) {
         </button>
         <button
           onClick={onCancel}
-          className="px-3 py-1 rounded-[10px] border border-white/10 text-muted text-xs font-medium hover:text-[#E8E5DC] hover:border-white/20 transition-colors"
+          className="px-3 py-1 rounded-[10px] border border-border text-muted text-xs font-medium hover:text-fg hover:border-border-hover transition-colors"
         >
           Keep mine
         </button>

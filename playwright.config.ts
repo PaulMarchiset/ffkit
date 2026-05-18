@@ -11,7 +11,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // workers: 1 on every platform. Parallel workers hang on teardown on
+  // Windows (each force-killed after a 5-minute timeout) — serial is both
+  // cleaner and ~4x faster in wall-clock time.
+  workers: 1,
   reporter: process.env.CI ? "line" : "list",
   use: {
     baseURL: BASE_URL,

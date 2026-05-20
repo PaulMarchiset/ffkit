@@ -32,6 +32,8 @@ const DEFAULT_INVOKE_RESPONSES: Record<string, InvokeResponder> = {
     available: [],
     bestH264: null,
     bestH265: null,
+    gpus: { nvidia: false, intel: false, amd: false, names: [] },
+    warnings: [],
   }),
   probe_file: () => ({
     path: "C:\\videos\\sample.mp4",

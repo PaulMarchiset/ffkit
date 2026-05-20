@@ -59,11 +59,27 @@ export default function App() {
           {encoderLoading && (
             <Loader2 className="w-3.5 h-3.5 animate-spin text-muted" />
           )}
-          {!encoderLoading && encoders?.bestH264 && (
-            <span className="text-xs text-accent bg-accent/10 px-2 py-1 rounded-md leading-none">
-              {encoders.bestH264}
-            </span>
-          )}
+          {!encoderLoading && encoders?.bestH264 && (() => {
+            const best = encoders.available.find(e => e.name === encoders.bestH264);
+            const probed = best?.probed ?? true;
+            const tooltip = probed
+              ? `${encoders.bestH264} (probed OK)`
+              : `${encoders.bestH264} — kept based on detected hardware; probe failed: ${best?.warning ?? "unknown reason"}`;
+            return (
+              <span
+                title={tooltip}
+                className={cn(
+                  "text-xs px-2 py-1 rounded-md leading-none cursor-help",
+                  probed
+                    ? "text-accent bg-accent/10"
+                    : "text-amber-300 bg-amber-300/10",
+                )}
+              >
+                {encoders.bestH264}
+                {!probed && " *"}
+              </span>
+            );
+          })()}
         </div>
 
         <div className="flex items-center gap-3">

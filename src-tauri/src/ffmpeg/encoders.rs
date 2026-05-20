@@ -2,11 +2,17 @@ use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 use tauri_plugin_shell::ShellExt;
 
+use crate::ffmpeg::gpu::{detect_gpus, GpuPresence};
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HwEncoder {
     pub name: String,
     pub codec: String,
+    /// True if a synthetic probe encode succeeded. False means the encoder
+    /// is included on hardware-presence grounds only (probe flaked) — see `warning`.
+    pub probed: bool,
+    pub warning: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -15,19 +21,30 @@ pub struct EncoderList {
     pub available: Vec<HwEncoder>,
     pub best_h264: Option<String>,
     pub best_h265: Option<String>,
+    pub gpus: GpuPresence,
+    pub warnings: Vec<String>,
 }
 
-const HW_CANDIDATES: &[(&str, &str)] = &[
-    ("h264_nvenc", "h264"),
-    ("h264_videotoolbox", "h264"),
-    ("h264_qsv", "h264"),
-    ("h264_amf", "h264"),
-    ("h264_vaapi", "h264"),
-    ("hevc_nvenc", "hevc"),
-    ("hevc_videotoolbox", "hevc"),
-    ("hevc_qsv", "hevc"),
-    ("hevc_amf", "hevc"),
-    ("hevc_vaapi", "hevc"),
+#[derive(Clone, Copy)]
+enum Vendor {
+    Nvidia,
+    Intel,
+    Amd,
+    Apple,
+    LinuxOpen,
+}
+
+const HW_CANDIDATES: &[(&str, &str, Vendor)] = &[
+    ("h264_nvenc",        "h264", Vendor::Nvidia),
+    ("h264_videotoolbox", "h264", Vendor::Apple),
+    ("h264_qsv",          "h264", Vendor::Intel),
+    ("h264_amf",          "h264", Vendor::Amd),
+    ("h264_vaapi",        "h264", Vendor::LinuxOpen),
+    ("hevc_nvenc",        "hevc", Vendor::Nvidia),
+    ("hevc_videotoolbox", "hevc", Vendor::Apple),
+    ("hevc_qsv",          "hevc", Vendor::Intel),
+    ("hevc_amf",          "hevc", Vendor::Amd),
+    ("hevc_vaapi",        "hevc", Vendor::LinuxOpen),
 ];
 
 const H264_PRIORITY: &[&str] = &[
@@ -39,13 +56,44 @@ const H265_PRIORITY: &[&str] = &[
 
 pub async fn detect_hw_encoders(app: &AppHandle) -> EncoderList {
     let known = get_available_encoder_names(app).await;
+    let gpus = detect_gpus();
     let mut available = Vec::new();
+    let mut warnings = Vec::new();
 
-    for (name, codec) in HW_CANDIDATES {
-        if known.iter().any(|n| n == name) && probe_encoder(app, name).await {
+    for (name, codec, vendor) in HW_CANDIDATES {
+        if !known.iter().any(|n| n == name) {
+            continue;
+        }
+
+        let probe = probe_encoder(app, name).await;
+        if probe.ok {
             available.push(HwEncoder {
                 name: name.to_string(),
                 codec: codec.to_string(),
+                probed: true,
+                warning: None,
+            });
+            continue;
+        }
+
+        // Probe failed — but if the vendor's hardware is present, the probe is
+        // likely flaking (hybrid graphics, missing CUDA init in the sidecar process,
+        // etc.) rather than the encoder being genuinely unavailable. Trust the
+        // hardware and include it with a warning so the UI can explain itself.
+        if hardware_present_for(*vendor, &gpus) {
+            let reason = summarize_stderr(&probe.stderr);
+            let warn = format!(
+                "{} probe failed but {} hardware was detected — encoder kept based on hardware presence ({})",
+                name,
+                vendor_label(*vendor),
+                reason
+            );
+            warnings.push(warn.clone());
+            available.push(HwEncoder {
+                name: name.to_string(),
+                codec: codec.to_string(),
+                probed: false,
+                warning: Some(reason),
             });
         }
     }
@@ -60,7 +108,34 @@ pub async fn detect_hw_encoders(app: &AppHandle) -> EncoderList {
         .find(|n| available.iter().any(|e| e.name == **n))
         .map(|s| s.to_string());
 
-    EncoderList { available, best_h264, best_h265 }
+    EncoderList {
+        available,
+        best_h264,
+        best_h265,
+        gpus,
+        warnings,
+    }
+}
+
+fn hardware_present_for(vendor: Vendor, gpus: &GpuPresence) -> bool {
+    match vendor {
+        Vendor::Nvidia => gpus.nvidia,
+        Vendor::Intel => gpus.intel,
+        Vendor::Amd => gpus.amd,
+        // VideoToolbox and VAAPI: we don't gate on detection; if the encoder is
+        // compiled in and the probe fails, that's a real failure on those platforms.
+        Vendor::Apple | Vendor::LinuxOpen => false,
+    }
+}
+
+fn vendor_label(vendor: Vendor) -> &'static str {
+    match vendor {
+        Vendor::Nvidia => "NVIDIA",
+        Vendor::Intel => "Intel",
+        Vendor::Amd => "AMD",
+        Vendor::Apple => "Apple",
+        Vendor::LinuxOpen => "VAAPI",
+    }
 }
 
 async fn get_available_encoder_names(app: &AppHandle) -> Vec<String> {
@@ -102,20 +177,48 @@ fn parse_encoder_list(output: &str) -> Vec<String> {
     names
 }
 
-async fn probe_encoder(app: &AppHandle, encoder: &str) -> bool {
+struct ProbeResult {
+    ok: bool,
+    stderr: String,
+}
+
+async fn probe_encoder(app: &AppHandle, encoder: &str) -> ProbeResult {
+    // NVENC requires a minimum frame size (~146x50 on H.264); QSV/AMF have their
+    // own minimums too. 256x256 is safely above every HW encoder's floor and small
+    // enough to probe in <100ms.
     let cmd = match app.shell().sidecar("ffmpeg") {
         Ok(s) => s.args([
             "-f", "lavfi",
-            "-i", "color=black:s=64x64:d=0.1",
+            "-i", "color=black:s=256x256:d=0.04",
             "-frames:v", "1",
             "-c:v", encoder,
             "-f", "null",
             "-",
         ]),
-        Err(_) => return false,
+        Err(e) => return ProbeResult { ok: false, stderr: format!("sidecar error: {e}") },
     };
     match cmd.output().await {
-        Ok(out) => out.status.success(),
-        Err(_) => false,
+        Ok(out) => ProbeResult {
+            ok: out.status.success(),
+            stderr: String::from_utf8_lossy(&out.stderr).to_string(),
+        },
+        Err(e) => ProbeResult { ok: false, stderr: format!("spawn error: {e}") },
+    }
+}
+
+/// Pull the most informative line out of ffmpeg's stderr — usually the last
+/// non-empty line is the actual error. Cap at 200 chars so it fits in a tooltip.
+fn summarize_stderr(stderr: &str) -> String {
+    let last = stderr
+        .lines()
+        .rev()
+        .map(|l| l.trim())
+        .find(|l| !l.is_empty())
+        .unwrap_or("probe returned non-zero exit");
+    if last.chars().count() > 200 {
+        let truncated: String = last.chars().take(200).collect();
+        format!("{truncated}…")
+    } else {
+        last.to_string()
     }
 }

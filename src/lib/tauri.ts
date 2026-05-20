@@ -45,12 +45,23 @@ export interface JobStatus {
 export interface HwEncoder {
   name: string;
   codec: string;
+  probed: boolean;
+  warning?: string;
+}
+
+export interface GpuPresence {
+  nvidia: boolean;
+  intel: boolean;
+  amd: boolean;
+  names: string[];
 }
 
 export interface EncoderList {
   available: HwEncoder[];
   bestH264?: string;
   bestH265?: string;
+  gpus: GpuPresence;
+  warnings: string[];
 }
 
 export interface Settings {

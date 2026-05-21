@@ -49,6 +49,7 @@ const DEFAULT_INVOKE_RESPONSES: Record<string, InvokeResponder> = {
   }),
   start_job: () => "mock-job-id",
   cancel_job: () => undefined,
+  clear_job: () => undefined,
   list_jobs: () => [],
   set_settings: () => undefined,
   open_path: () => undefined,

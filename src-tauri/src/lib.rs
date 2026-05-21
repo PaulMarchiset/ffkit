@@ -17,6 +17,7 @@ pub fn run() {
             jobs::start_job,
             jobs::cancel_job,
             jobs::list_jobs,
+            jobs::clear_job,
             settings::get_settings,
             settings::set_settings,
             open_path,

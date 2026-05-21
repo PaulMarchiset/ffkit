@@ -127,6 +127,24 @@ pub async fn list_jobs(state: tauri::State<'_, AppState>) -> Result<Vec<JobStatu
     Ok(statuses)
 }
 
+#[tauri::command]
+pub async fn clear_job(
+    id: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<(), String> {
+    let mut jobs = state.jobs.lock().await;
+    match jobs.get(&id) {
+        Some(entry) => {
+            if entry.status.state == JobState::Running || entry.status.state == JobState::Queued {
+                return Err(format!("Job {id} is still active; cancel it first"));
+            }
+            jobs.remove(&id);
+            Ok(())
+        }
+        None => Ok(()),
+    }
+}
+
 // ── helpers ────────────────────────────────────────────────────────────────
 
 async fn resolve_encoder(state: &tauri::State<'_, AppState>) -> String {

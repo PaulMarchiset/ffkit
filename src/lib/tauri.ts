@@ -112,6 +112,8 @@ export const startJob = (spec: JobSpec) =>
 
 export const cancelJob = (id: string) => invoke<void>("cancel_job", { id });
 
+export const clearJob = (id: string) => invoke<void>("clear_job", { id });
+
 export const listJobs = () => invoke<JobStatus[]>("list_jobs");
 
 export const getSettings = () => invoke<Settings>("get_settings");

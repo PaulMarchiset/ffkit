@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { Loader2, Settings as SettingsIcon } from "lucide-react";
 import { SimpleMode } from "@/components/SimpleMode";
 import { JobProgress } from "@/components/JobProgress";
+import { JobsDock } from "@/components/JobsDock";
 import { SettingsPanel } from "@/components/Settings";
 import { getSettings, detectEncoders, openUrl, type Settings, type EncoderList } from "@/lib/tauri";
+import { useAllJobs } from "@/lib/useAllJobs";
 import { cn } from "@/lib/utils";
 
 type View = "main" | "settings";
@@ -32,6 +34,7 @@ export default function App() {
   const [encoderLoading, setEncoderLoading] = useState(true);
   const [activeJob, setActiveJob] = useState<{ id: string; outputPath: string } | null>(null);
   const [showProgress, setShowProgress] = useState(false);
+  const { jobs: allJobs, dismiss: dismissJob } = useAllJobs();
 
   useEffect(() => {
     getSettings().then(setSettings);
@@ -48,6 +51,16 @@ export default function App() {
   function handleProgressBack() {
     setShowProgress(false);
   }
+
+  function handleSelectJob(jobId: string, outputPath: string) {
+    setActiveJob({ id: jobId, outputPath });
+    setShowProgress(true);
+  }
+
+  const dockJobs =
+    showProgress && activeJob
+      ? allJobs.filter((j) => j.id !== activeJob.id)
+      : allJobs;
 
   const isSettings = view === "settings";
 
@@ -121,6 +134,12 @@ export default function App() {
           )}
         </div>
       </main>
+
+      <JobsDock
+        jobs={dockJobs}
+        onDismiss={dismissJob}
+        onSelect={handleSelectJob}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { cancelJob } from "@/lib/tauri";
+import { jobsService } from "@/lib/services/jobsService";
 import { useTypewriter } from "@/lib/useTypewriter";
-import { useJobEvents } from "@/lib/useJobEvents";
+import { useJobEvents } from "@/lib/jobsContext";
 import { getPhasePool } from "@/lib/jobPhaseWords";
 import { JobStatusWord } from "./JobStatusWord";
 import { JobStatsLine } from "./JobStatsLine";
@@ -37,7 +37,7 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
   async function handleCancel() {
     setCancelling(true);
     try {
-      await cancelJob(jobId);
+      await jobsService.cancel(jobId);
     } finally {
       setCancelling(false);
     }

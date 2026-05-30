@@ -1,4 +1,4 @@
-import type { Quality } from "./tauri";
+import type { Quality } from "./types";
 
 export interface QualityPreset {
   id: Quality;
@@ -28,18 +28,3 @@ export const QUALITY_PRESETS: QualityPreset[] = [
       "CRF 18 — visually lossless H.264. Larger file. For true mathematically lossless, use Advanced mode.",
   },
 ];
-
-export function defaultOutputPath(
-  inputPath: string,
-  namingPattern: string,
-  folderOverride?: string,
-): string {
-  const sep = inputPath.includes("\\") ? "\\" : "/";
-  const parts = inputPath.split(sep);
-  const filename = parts.pop() ?? "";
-  const dotIdx = filename.lastIndexOf(".");
-  const name = dotIdx >= 0 ? filename.slice(0, dotIdx) : filename;
-  const dir = folderOverride ?? parts.join(sep);
-  const outName = namingPattern.replace("{name}", name);
-  return `${dir}${sep}${outName}.mp4`;
-}

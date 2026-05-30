@@ -18,6 +18,7 @@ pub async fn get_settings(
     if path.exists() {
         let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
         if let Ok(loaded) = serde_json::from_str::<Settings>(&content) {
+            state.scheduler.set_limit(loaded.concurrent_jobs as usize);
             *state.settings.lock().await = loaded;
         }
     }
@@ -36,6 +37,7 @@ pub async fn set_settings(
     }
     let content = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
     std::fs::write(&path, content).map_err(|e| e.to_string())?;
+    state.scheduler.set_limit(settings.concurrent_jobs as usize);
     *state.settings.lock().await = settings;
     Ok(())
 }

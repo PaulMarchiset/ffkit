@@ -1,5 +1,5 @@
-import { formatBytes, formatEta } from "@/lib/utils";
-import type { JobProgressState } from "@/lib/useJobEvents";
+import { formatBytes, formatEta } from "@/lib/format";
+import type { JobProgressState } from "@/lib/jobsContext";
 
 interface Props {
   progress: JobProgressState;

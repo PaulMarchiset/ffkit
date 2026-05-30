@@ -2,7 +2,7 @@ pub mod commands;
 pub mod ffmpeg;
 pub mod state;
 
-use commands::{jobs, probe, encoders, settings, open_path, open_url};
+use commands::{encoders, jobs, probe, settings, system};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -20,8 +20,8 @@ pub fn run() {
             jobs::clear_job,
             settings::get_settings,
             settings::set_settings,
-            open_path,
-            open_url,
+            system::open_path,
+            system::open_url,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

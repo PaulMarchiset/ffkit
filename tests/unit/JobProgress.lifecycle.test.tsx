@@ -1,21 +1,44 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { JobProgress } from "@/components/JobProgress";
+import { JobsProvider } from "@/lib/jobsContext";
 import { __tauriMock } from "@/test/mocks/tauri";
 
 function flush() {
-  // One microtask tick to drain the Promise.then in useJobEvents that pushes
-  // unlisten fns into the cleanup list once `listen()` resolves.
+  // One microtask tick to drain the Promise.then in JobsProvider that pushes
+  // unlisten fns into the cleanup list once `listen()` resolves, plus the
+  // awaited list_jobs() refresh.
   return new Promise<void>((resolve) => setTimeout(resolve, 0));
 }
 
-describe("JobProgress — event listener lifecycle (D2 closed)", () => {
+function withProvider(node: ReactNode) {
+  return <JobsProvider>{node}</JobsProvider>;
+}
+
+// A list_jobs() row so the provider seeds a job the progress view can read.
+function seedJob(id: string) {
+  __tauriMock.setInvokeResponse("list_jobs", () => [
+    {
+      id,
+      inputPath: `/tmp/${id}.mov`,
+      outputPath: "/tmp/out.mp4",
+      state: "running",
+      progress: 0,
+      speed: 0,
+      etaSecs: 0,
+      outputSize: 0,
+    },
+  ]);
+}
+
+describe("Jobs event subscription lifecycle (D2 closed)", () => {
   beforeEach(() => {
     __tauriMock.resetInvokeResponses();
   });
 
-  it("subscribes to job-progress, job-done, and job-log on mount", async () => {
-    render(<JobProgress jobId="J1" outputPath="/tmp/out.mp4" onBack={() => {}} />);
+  it("JobsProvider subscribes to job-progress, job-done, and job-log once on mount", async () => {
+    render(withProvider(null));
     await flush();
     expect(__tauriMock.listenerCount("job-progress")).toBe(1);
     expect(__tauriMock.listenerCount("job-done")).toBe(1);
@@ -23,9 +46,7 @@ describe("JobProgress — event listener lifecycle (D2 closed)", () => {
   });
 
   it("drops all three listeners synchronously on unmount", async () => {
-    const { unmount } = render(
-      <JobProgress jobId="J2" outputPath="/tmp/out.mp4" onBack={() => {}} />,
-    );
+    const { unmount } = render(withProvider(null));
     await flush();
     expect(__tauriMock.listenerCount("job-progress")).toBe(1);
 
@@ -39,7 +60,12 @@ describe("JobProgress — event listener lifecycle (D2 closed)", () => {
   });
 
   it("renders progress events for the matching jobId", async () => {
-    render(<JobProgress jobId="J3" outputPath="/tmp/out.mp4" onBack={() => {}} />);
+    seedJob("J3");
+    render(
+      withProvider(
+        <JobProgress jobId="J3" outputPath="/tmp/out.mp4" onBack={() => {}} />,
+      ),
+    );
     await flush();
     await act(async () => {
       __tauriMock.emit("job-progress", {
@@ -58,7 +84,12 @@ describe("JobProgress — event listener lifecycle (D2 closed)", () => {
   });
 
   it("ignores events meant for a different jobId", async () => {
-    render(<JobProgress jobId="J4" outputPath="/tmp/out.mp4" onBack={() => {}} />);
+    seedJob("J4");
+    render(
+      withProvider(
+        <JobProgress jobId="J4" outputPath="/tmp/out.mp4" onBack={() => {}} />,
+      ),
+    );
     await flush();
     await act(async () => {
       __tauriMock.emit("job-progress", {
@@ -77,7 +108,11 @@ describe("JobProgress — event listener lifecycle (D2 closed)", () => {
   });
 
   it("renders the done state when job-done arrives", async () => {
-    render(<JobProgress jobId="J5" outputPath="/tmp/out.mp4" onBack={() => {}} />);
+    render(
+      withProvider(
+        <JobProgress jobId="J5" outputPath="/tmp/out.mp4" onBack={() => {}} />,
+      ),
+    );
     await flush();
     await act(async () => {
       __tauriMock.emit("job-done", {
@@ -92,13 +127,11 @@ describe("JobProgress — event listener lifecycle (D2 closed)", () => {
   });
 
   it("unlisten that resolves after cleanup runs immediately (unmount-before-listen-resolves race)", async () => {
-    // Don't flush before unmount — useEffect has run and the listener is
+    // Don't flush before unmount — the effect has run and the listener is
     // already in the mock's set (set.add happens synchronously inside the
     // async listen()), but the unlisten Promise hasn't settled yet, so the
-    // unlistens[] array in useJobEvents is still empty.
-    const { unmount } = render(
-      <JobProgress jobId="J6" outputPath="/tmp/out.mp4" onBack={() => {}} />,
-    );
+    // unlistens[] array in JobsProvider is still empty.
+    const { unmount } = render(withProvider(null));
     expect(__tauriMock.listenerCount("job-progress")).toBe(1);
 
     unmount();
@@ -114,9 +147,7 @@ describe("JobProgress — event listener lifecycle (D2 closed)", () => {
   });
 
   it("emit after unmount is a no-op (no listeners, no errors)", async () => {
-    const { unmount } = render(
-      <JobProgress jobId="J7" outputPath="/tmp/out.mp4" onBack={() => {}} />,
-    );
+    const { unmount } = render(withProvider(null));
     await flush();
     unmount();
 

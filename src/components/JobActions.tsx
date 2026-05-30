@@ -1,6 +1,6 @@
 import { FolderOpen, RotateCcw, X } from "lucide-react";
-import { openPath } from "@/lib/tauri";
-import { parentDir } from "@/lib/utils";
+import { filesService } from "@/lib/services/filesService";
+import { parentDir } from "@/lib/path";
 
 interface Props {
   status: "running" | "success" | "cancelled" | "failed";
@@ -27,7 +27,7 @@ export function JobActions({ status, cancelling, outputPath, onCancel, onBack }:
       )}
       {isSuccess && (
         <button
-          onClick={() => openPath(parentDir(outputPath))}
+          onClick={() => filesService.openPath(parentDir(outputPath))}
           className="flex items-center gap-2 px-4 py-2 rounded-full border border-accent/50 text-sm text-accent bg-accent/10 hover:bg-accent/15 transition-colors"
         >
           <FolderOpen className="w-4 h-4" />

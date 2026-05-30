@@ -10,9 +10,11 @@ export interface FeatureTemplate {
   prompts?: Array<{ key: string; placeholder: string }>;
 }
 
+export const DEFAULT_TEMPLATE_ID = "compress-h264";
+
 export const FEATURE_TEMPLATES: FeatureTemplate[] = [
   {
-    id: "compress-h264",
+    id: DEFAULT_TEMPLATE_ID,
     label: "H.264",
     category: "Compress",
     command: "ffmpeg -i {input} -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k {output}",
@@ -128,4 +130,10 @@ export function applyPromptValues(
     result = result.split(`{${key}}`).join(val);
   }
   return result;
+}
+
+export function defaultCommandTemplate(): string {
+  const tpl = FEATURE_TEMPLATES.find((t) => t.id === DEFAULT_TEMPLATE_ID);
+  if (!tpl) throw new Error(`Missing default template '${DEFAULT_TEMPLATE_ID}'`);
+  return tpl.command;
 }

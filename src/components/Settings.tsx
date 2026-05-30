@@ -1,35 +1,71 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, FolderOpen } from "lucide-react";
-import {
-  getSettings,
-  setSettings,
-  pickOutputFolder,
-  type Settings,
-  type Quality,
-  type HardwareAccel,
-  type UpdateChannel,
-} from "@/lib/tauri";
+import { pickOutputFolder } from "@/lib/dialogs";
+import { useSettings } from "@/lib/settingsContext";
+import type { Settings, Quality, HardwareAccel, UpdateChannel } from "@/lib/types";
+import { Section } from "./ui/Section";
+import { Row } from "./ui/Row";
+import { Select } from "./ui/Select";
+import { Toggle } from "./ui/Toggle";
 
 interface Props {
   onBack: () => void;
 }
 
+const QUALITY_OPTIONS = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "lossless", label: "Lossless" },
+];
+
+const HW_ACCEL_OPTIONS = [
+  { value: "auto", label: "Auto (recommended)" },
+  { value: "software", label: "Force software (libx264)" },
+];
+
+const CONCURRENT_OPTIONS = [1, 2, 3, 4].map((n) => ({
+  value: String(n),
+  label: String(n),
+}));
+
+const UPDATE_CHANNEL_OPTIONS = [
+  { value: "stable", label: "Stable" },
+  { value: "beta", label: "Beta" },
+];
+
+const SAVED_BANNER_MS = 2000;
+
 export function SettingsPanel({ onBack }: Props) {
-  const [settings, setLocal] = useState<Settings | null>(null);
+  const { settings: persisted, saveSettings } = useSettings();
+  // Local editable draft; seeded from the canonical settings and only pushed
+  // back through the context on save.
+  const [settings, setLocal] = useState<Settings | null>(persisted);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    getSettings().then(setLocal);
+    setLocal(persisted);
+  }, [persisted]);
+
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    };
   }, []);
+
+  function update<K extends keyof Settings>(key: K, value: Settings[K]) {
+    setLocal((prev) => (prev ? { ...prev, [key]: value } : prev));
+  }
 
   async function handleSave() {
     if (!settings) return;
     setSaving(true);
     try {
-      await setSettings(settings);
+      await saveSettings(settings);
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setSaved(false), SAVED_BANNER_MS);
     } finally {
       setSaving(false);
     }
@@ -37,9 +73,7 @@ export function SettingsPanel({ onBack }: Props) {
 
   async function handlePickFolder() {
     const folder = await pickOutputFolder();
-    if (folder && settings) {
-      setLocal({ ...settings, outputFolder: folder });
-    }
+    if (folder) update("outputFolder", folder);
   }
 
   if (!settings) {
@@ -61,7 +95,6 @@ export function SettingsPanel({ onBack }: Props) {
       </button>
 
       <div className="space-y-6">
-        {/* Output folder */}
         <Section title="Output">
           <Row label="Default output folder">
             <div className="flex gap-2 items-center">
@@ -76,7 +109,7 @@ export function SettingsPanel({ onBack }: Props) {
               </button>
               {settings.outputFolder && (
                 <button
-                  onClick={() => setLocal({ ...settings, outputFolder: undefined })}
+                  onClick={() => update("outputFolder", undefined)}
                   className="text-xs text-red-500 hover:text-red-600"
                 >
                   Clear
@@ -88,70 +121,57 @@ export function SettingsPanel({ onBack }: Props) {
             <input
               type="text"
               value={settings.outputNaming}
-              onChange={(e) => setLocal({ ...settings, outputNaming: e.target.value })}
+              onChange={(e) => update("outputNaming", e.target.value)}
               className="w-48 px-2 py-1 text-sm rounded-md border border-border-soft bg-bg text-fg outline-none focus:border-accent/50"
             />
           </Row>
         </Section>
 
-        {/* Quality */}
         <Section title="Defaults">
           <Row label="Default quality">
             <Select
               value={settings.defaultQuality}
-              onChange={(v) => setLocal({ ...settings, defaultQuality: v as Quality })}
-              options={[
-                { value: "low", label: "Low" },
-                { value: "medium", label: "Medium" },
-                { value: "lossless", label: "Lossless" },
-              ]}
+              onChange={(v) => update("defaultQuality", v as Quality)}
+              options={QUALITY_OPTIONS}
             />
           </Row>
           <Row label="Hardware acceleration">
             <Select
               value={settings.hardwareAccel}
-              onChange={(v) => setLocal({ ...settings, hardwareAccel: v as HardwareAccel })}
-              options={[
-                { value: "auto", label: "Auto (recommended)" },
-                { value: "software", label: "Force software (libx264)" },
-              ]}
+              onChange={(v) => update("hardwareAccel", v as HardwareAccel)}
+              options={HW_ACCEL_OPTIONS}
             />
           </Row>
         </Section>
 
-        {/* Jobs */}
         <Section title="Jobs">
           <Row label="Max concurrent jobs">
             <Select
               value={String(settings.concurrentJobs)}
-              onChange={(v) => setLocal({ ...settings, concurrentJobs: Number(v) })}
-              options={[1, 2, 3, 4].map((n) => ({ value: String(n), label: String(n) }))}
+              onChange={(v) => update("concurrentJobs", Number(v))}
+              options={CONCURRENT_OPTIONS}
             />
           </Row>
           <Row label="Notify when done">
             <Toggle
               value={settings.notifyOnDone}
-              onChange={(v) => setLocal({ ...settings, notifyOnDone: v })}
+              onChange={(v) => update("notifyOnDone", v)}
             />
           </Row>
           <Row label="Open folder when done">
             <Toggle
               value={settings.openFolderOnDone}
-              onChange={(v) => setLocal({ ...settings, openFolderOnDone: v })}
+              onChange={(v) => update("openFolderOnDone", v)}
             />
           </Row>
         </Section>
 
-        {/* Update */}
         <Section title="Updates">
           <Row label="Update channel">
             <Select
               value={settings.updateChannel}
-              onChange={(v) => setLocal({ ...settings, updateChannel: v as UpdateChannel })}
-              options={[
-                { value: "stable", label: "Stable" },
-                { value: "beta", label: "Beta" },
-              ]}
+              onChange={(v) => update("updateChannel", v as UpdateChannel)}
+              options={UPDATE_CHANNEL_OPTIONS}
             />
           </Row>
         </Section>
@@ -165,68 +185,5 @@ export function SettingsPanel({ onBack }: Props) {
         {saved ? "Saved!" : saving ? "Saving…" : "Save settings"}
       </button>
     </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">
-        {title}
-      </h3>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-sm text-subtle">{label}</span>
-      {children}
-    </div>
-  );
-}
-
-function Select({
-  value,
-  onChange,
-  options,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="px-2 py-1 text-sm rounded-md border border-border-soft bg-bg text-fg outline-none focus:border-accent/50"
-    >
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      role="switch"
-      aria-checked={value}
-      onClick={() => onChange(!value)}
-      className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${
-        value ? "bg-accent" : "bg-white/20"
-      }`}
-    >
-      <span
-        className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-          value ? "translate-x-4" : "translate-x-0"
-        }`}
-      />
-    </button>
   );
 }

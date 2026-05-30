@@ -1,26 +1,21 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { FolderOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { FilePicker } from "./FilePicker";
 import { QualityButtons } from "./QualityButtons";
 import { AdvancedMode } from "./AdvancedMode";
-import {
-  startJob,
-  pickOutputFile,
-  type FileInfo,
-  type Quality,
-  type Settings,
-} from "@/lib/tauri";
-import { defaultOutputPath } from "@/lib/presets";
-import { useTypewriter } from "@/lib/useTypewriter";
-
-const VERBS = ["compress", "trim", "convert", "resize", "extract", "transcode", "ffmpeg"];
+import { HeroGreeting } from "./HeroGreeting";
+import { jobsService } from "@/lib/services/jobsService";
+import { pickOutputFile } from "@/lib/dialogs";
+import type { FileInfo, Quality } from "@/lib/types";
+import { defaultOutputPath } from "@/lib/path";
+import { useSettings } from "@/lib/settingsContext";
 
 interface Props {
-  settings: Settings | null;
   onJobStart: (jobId: string, outputPath: string) => void;
 }
 
-export function SimpleMode({ settings, onJobStart }: Props) {
+export function SimpleMode({ onJobStart }: Props) {
+  const { settings } = useSettings();
   const [file, setFile] = useState<FileInfo | null>(null);
   const [quality, setQuality] = useState<Quality>(
     settings?.defaultQuality ?? "medium",
@@ -29,13 +24,6 @@ export function SimpleMode({ settings, onJobStart }: Props) {
   const [converting, setConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  const verbIdxRef = useRef(1);
-  const displayedVerb = useTypewriter(VERBS[0], () => {
-    const next = VERBS[verbIdxRef.current % VERBS.length];
-    verbIdxRef.current++;
-    return next;
-  });
 
   useEffect(() => {
     if (file) {
@@ -49,7 +37,7 @@ export function SimpleMode({ settings, onJobStart }: Props) {
     setError(null);
     setConverting(true);
     try {
-      const jobId = await startJob({
+      const jobId = await jobsService.start({
         inputPath: file.path,
         outputPath,
         mode: "preset",
@@ -70,13 +58,7 @@ export function SimpleMode({ settings, onJobStart }: Props) {
 
   return (
     <div className="flex flex-col items-center gap-6 max-w-2xl mx-auto w-full py-8">
-      <h1 className="font-serif text-5xl text-fg text-center leading-tight tracking-tight">
-        Hello, ready to{" "}
-        <span className="text-accent">
-          {displayedVerb}
-        </span>
-        ?
-      </h1>
+      <HeroGreeting />
 
       <div className="w-full flex flex-col gap-3">
         <FilePicker
@@ -119,9 +101,7 @@ export function SimpleMode({ settings, onJobStart }: Props) {
           </div>
         )}
 
-        {error && (
-          <p className="text-sm text-red-400">{error}</p>
-        )}
+        {error && <p className="text-sm text-red-400">{error}</p>}
       </div>
 
       {showAdvanced && (

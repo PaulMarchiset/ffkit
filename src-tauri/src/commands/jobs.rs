@@ -1,10 +1,9 @@
 use crate::ffmpeg::presets::preset_args;
-use crate::ffmpeg::progress::ProgressAccumulator;
+use crate::ffmpeg::reader::run_job_reader;
 use crate::ffmpeg::runner::get_duration_ms;
-use crate::state::{AppState, JobEntry, JobState, JobStatus, JobsMap};
+use crate::state::{AppState, JobEntry, JobState, JobStatus};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter};
-use tauri_plugin_shell::process::CommandEvent;
+use tauri::AppHandle;
 use tauri_plugin_shell::ShellExt;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -30,73 +29,33 @@ pub async fn start_job(
     state: tauri::State<'_, AppState>,
     app: AppHandle,
 ) -> Result<String, String> {
-    // Enforce concurrent job limit.
-    {
-        let settings = state.settings.lock().await;
-        let jobs = state.jobs.lock().await;
-        let running = jobs
-            .values()
-            .filter(|e| e.status.state == JobState::Running)
-            .count();
-        if running >= settings.concurrent_jobs as usize {
-            return Err(format!(
-                "Job limit ({}) reached. Please wait for the current job to finish.",
-                settings.concurrent_jobs
-            ));
-        }
-    }
+    let slot = state.scheduler.try_reserve().map_err(|limit| {
+        format!("Job limit ({limit}) reached. Please wait for the current job to finish.")
+    })?;
 
-    let job_id = uuid::Uuid::new_v4().to_string();
-
-    // Determine the encoder to use.
     let encoder = resolve_encoder(&state).await;
-
-    // Build ffmpeg arg list.
     let args = build_args(&spec, &encoder)?;
-
-    // Get input duration for ETA.
     let total_ms = get_duration_ms(&app, &spec.input_path).await;
 
-    // Log the command for debugging.
     eprintln!("[ffkit] ffmpeg {}", args.join(" "));
 
-    // Spawn the sidecar.
-    let cmd = app
+    let (rx, child) = app
         .shell()
         .sidecar("ffmpeg")
         .map_err(|e| e.to_string())?
-        .args(&args);
+        .args(&args)
+        .spawn()
+        .map_err(|e| e.to_string())?;
 
-    let (rx, child) = cmd.spawn().map_err(|e| e.to_string())?;
+    let job_id = uuid::Uuid::new_v4().to_string();
+    register_job(&state, &job_id, &spec, child).await;
 
-    // Register the job.
-    {
-        let mut jobs = state.jobs.lock().await;
-        jobs.insert(
-            job_id.clone(),
-            JobEntry {
-                status: JobStatus {
-                    id: job_id.clone(),
-                    input_path: spec.input_path.clone(),
-                    output_path: spec.output_path.clone(),
-                    state: JobState::Running,
-                    progress: 0.0,
-                    speed: 0.0,
-                    eta_secs: 0.0,
-                    output_size: 0,
-                    error: None,
-                },
-                child: Some(child),
-            },
-        );
-    }
-
-    // Spawn background reader task.
     let jobs_map = state.jobs.clone();
     let app2 = app.clone();
     let jid = job_id.clone();
     tokio::spawn(async move {
-        run_reader(rx, jid, jobs_map, app2, total_ms).await;
+        let _slot = slot; // released when the reader returns
+        run_job_reader(rx, jid, jobs_map, app2, total_ms).await;
     });
 
     Ok(job_id)
@@ -108,15 +67,14 @@ pub async fn cancel_job(
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
     let mut jobs = state.jobs.lock().await;
-    if let Some(entry) = jobs.get_mut(&id) {
-        entry.status.state = JobState::Cancelled;
-        if let Some(child) = entry.child.take() {
-            let _ = child.kill();
-        }
-        Ok(())
-    } else {
-        Err(format!("Job {id} not found"))
+    let entry = jobs
+        .get_mut(&id)
+        .ok_or_else(|| format!("Job {id} not found"))?;
+    entry.status.state = JobState::Cancelled;
+    if let Some(child) = entry.child.take() {
+        let _ = child.kill();
     }
+    Ok(())
 }
 
 #[tauri::command]
@@ -148,25 +106,51 @@ pub async fn clear_job(
 // ── helpers ────────────────────────────────────────────────────────────────
 
 async fn resolve_encoder(state: &tauri::State<'_, AppState>) -> String {
+    const SOFTWARE: &str = "libx264";
     let settings = state.settings.lock().await;
     if settings.hardware_accel == "software" {
-        return "libx264".to_string();
+        return SOFTWARE.to_string();
     }
     let list = state.encoder_list.lock().await;
-    if let Some(ref l) = *list {
-        if settings.hardware_accel == "auto" {
-            if let Some(best) = &l.best_h264 {
-                return best.clone();
-            }
-        } else if l.available.iter().any(|e| e.name == settings.hardware_accel) {
-            return settings.hardware_accel.clone();
+    let Some(ref l) = *list else { return SOFTWARE.to_string(); };
+
+    if settings.hardware_accel == "auto" {
+        if let Some(best) = &l.best_h264 {
+            return best.clone();
         }
+    } else if l.available.iter().any(|e| e.name == settings.hardware_accel) {
+        return settings.hardware_accel.clone();
     }
-    "libx264".to_string()
+    SOFTWARE.to_string()
+}
+
+async fn register_job(
+    state: &tauri::State<'_, AppState>,
+    job_id: &str,
+    spec: &JobSpec,
+    child: tauri_plugin_shell::process::CommandChild,
+) {
+    let mut jobs = state.jobs.lock().await;
+    jobs.insert(
+        job_id.to_string(),
+        JobEntry {
+            status: JobStatus {
+                id: job_id.to_string(),
+                input_path: spec.input_path.clone(),
+                output_path: spec.output_path.clone(),
+                state: JobState::Running,
+                progress: 0.0,
+                speed: 0.0,
+                eta_secs: 0.0,
+                output_size: 0,
+                error: None,
+            },
+            child: Some(child),
+        },
+    );
 }
 
 fn build_args(spec: &JobSpec, encoder: &str) -> Result<Vec<String>, String> {
-    // Global flags first (before -i).
     let mut args = vec![
         "-y".to_string(),
         "-progress".to_string(),
@@ -182,7 +166,7 @@ fn build_args(spec: &JobSpec, encoder: &str) -> Result<Vec<String>, String> {
             args.push(spec.output_path.clone());
         }
         JobMode::Raw => {
-            // raw_args already contain -i, paths substituted by frontend.
+            // raw_args already contain -i; paths are substituted by the frontend.
             if let Some(raw) = &spec.raw_args {
                 args.extend(raw.clone());
             }
@@ -192,106 +176,3 @@ fn build_args(spec: &JobSpec, encoder: &str) -> Result<Vec<String>, String> {
     Ok(args)
 }
 
-async fn run_reader(
-    mut rx: tokio::sync::mpsc::Receiver<CommandEvent>,
-    job_id: String,
-    jobs: JobsMap,
-    app: AppHandle,
-    total_ms: Option<i64>,
-) {
-    let mut acc = ProgressAccumulator::new();
-    let mut stderr_lines: Vec<String> = Vec::new();
-
-    while let Some(event) = rx.recv().await {
-        match event {
-            CommandEvent::Stdout(bytes) => {
-                for update in acc.feed(&bytes) {
-                    let percentage = total_ms
-                        .filter(|&t| t > 0)
-                        .map(|t| (update.out_time_ms as f64 / t as f64 * 100.0).min(99.9))
-                        .unwrap_or(0.0);
-
-                    let eta_secs = if update.speed > 0.0 {
-                        total_ms
-                            .map(|t| {
-                                let remaining_ms = (t - update.out_time_ms).max(0);
-                                remaining_ms as f64 / 1000.0 / update.speed
-                            })
-                            .unwrap_or(0.0)
-                    } else {
-                        0.0
-                    };
-
-                    {
-                        let mut jobs = jobs.lock().await;
-                        if let Some(entry) = jobs.get_mut(&job_id) {
-                            entry.status.progress = percentage;
-                            entry.status.speed = update.speed;
-                            entry.status.eta_secs = eta_secs;
-                            entry.status.output_size = update.total_size;
-                        }
-                    }
-
-                    let _ = app.emit(
-                        "job-progress",
-                        serde_json::json!({
-                            "jobId": job_id,
-                            "frame": update.frame,
-                            "fps": update.fps,
-                            "speed": update.speed,
-                            "outTimeMs": update.out_time_ms,
-                            "totalSize": update.total_size,
-                            "percentage": percentage,
-                            "etaSecs": eta_secs,
-                            "done": update.done,
-                        }),
-                    );
-                }
-            }
-            CommandEvent::Stderr(bytes) => {
-                let line = String::from_utf8_lossy(&bytes).to_string();
-                stderr_lines.push(line.clone());
-                let _ = app.emit(
-                    "job-log",
-                    serde_json::json!({ "jobId": job_id, "line": line }),
-                );
-            }
-            CommandEvent::Terminated(status) => {
-                let success = status.code.map(|c| c == 0).unwrap_or(false);
-                let cancelled = {
-                    let jobs = jobs.lock().await;
-                    jobs.get(&job_id)
-                        .map(|e| e.status.state == JobState::Cancelled)
-                        .unwrap_or(false)
-                };
-
-                let mut jobs = jobs.lock().await;
-                if let Some(entry) = jobs.get_mut(&job_id) {
-                    if !cancelled {
-                        if success {
-                            entry.status.state = JobState::Done;
-                            entry.status.progress = 100.0;
-                        } else {
-                            entry.status.state = JobState::Failed;
-                            entry.status.error = stderr_lines.last().cloned();
-                        }
-                    }
-                    entry.child = None;
-
-                    let _ = app.emit(
-                        "job-done",
-                        serde_json::json!({
-                            "jobId": job_id,
-                            "success": success && !cancelled,
-                            "cancelled": cancelled,
-                            "outputPath": entry.status.output_path,
-                            "error": entry.status.error,
-                        }),
-                    );
-                }
-                break;
-            }
-            _ => {}
-        }
-    }
-}

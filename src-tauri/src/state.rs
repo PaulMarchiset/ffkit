@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex as StdMutex};
 use tokio::sync::Mutex;
 use serde::{Deserialize, Serialize};
 
@@ -63,18 +63,71 @@ impl Default for Settings {
 
 pub type JobsMap = Arc<Mutex<HashMap<String, JobEntry>>>;
 
+/// Admission control for concurrent ffmpeg jobs.
+///
+/// Owns the running-job count + configured limit as a single critical section
+/// so the check-and-reserve is atomic. Uses `std::sync::Mutex` (not tokio's) so
+/// `JobSlot::drop` can release the slot without an async context.
+pub struct JobScheduler {
+    inner: StdMutex<SchedulerState>,
+}
+
+struct SchedulerState {
+    running: usize,
+    limit: usize,
+}
+
+impl JobScheduler {
+    pub fn new(limit: usize) -> Self {
+        JobScheduler {
+            inner: StdMutex::new(SchedulerState { running: 0, limit }),
+        }
+    }
+
+    /// Atomically reserve a slot if one is available. On `Err`, returns the
+    /// current limit so the caller can build a user-facing message.
+    pub fn try_reserve(self: &Arc<Self>) -> Result<JobSlot, usize> {
+        let mut s = self.inner.lock().unwrap();
+        if s.running >= s.limit {
+            return Err(s.limit);
+        }
+        s.running += 1;
+        Ok(JobSlot { scheduler: self.clone() })
+    }
+
+    pub fn set_limit(&self, n: usize) {
+        self.inner.lock().unwrap().limit = n;
+    }
+}
+
+/// RAII permit. Dropping releases the reserved slot.
+pub struct JobSlot {
+    scheduler: Arc<JobScheduler>,
+}
+
+impl Drop for JobSlot {
+    fn drop(&mut self) {
+        let mut s = self.scheduler.inner.lock().unwrap();
+        s.running = s.running.saturating_sub(1);
+    }
+}
+
 pub struct AppState {
     pub jobs: JobsMap,
     pub encoder_list: Arc<Mutex<Option<crate::ffmpeg::encoders::EncoderList>>>,
     pub settings: Arc<Mutex<Settings>>,
+    pub scheduler: Arc<JobScheduler>,
 }
 
 impl AppState {
     pub fn new() -> Self {
+        let defaults = Settings::default();
+        let limit = defaults.concurrent_jobs as usize;
         AppState {
             jobs: Arc::new(Mutex::new(HashMap::new())),
             encoder_list: Arc::new(Mutex::new(None)),
-            settings: Arc::new(Mutex::new(Settings::default())),
+            settings: Arc::new(Mutex::new(defaults)),
+            scheduler: Arc::new(JobScheduler::new(limit)),
         }
     }
 }

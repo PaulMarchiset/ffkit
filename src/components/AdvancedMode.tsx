@@ -4,13 +4,12 @@ import { FeatureButtons } from "./FeatureButtons";
 import { CommandEditor } from "./CommandEditor";
 import { ConfirmOverwritePanel } from "./ConfirmOverwritePanel";
 import { PromptTemplatePanel } from "./PromptTemplatePanel";
-import { startJob, type FileInfo } from "@/lib/tauri";
-import { parseCommandArgs } from "@/lib/utils";
+import { jobsService } from "@/lib/services/jobsService";
+import type { FileInfo } from "@/lib/types";
+import { buildCommandArgs } from "@/lib/commandBuilder";
 import { useCommandState } from "@/lib/useCommandState";
-import { applyPromptValues, type FeatureTemplate } from "@/lib/ffmpeg-args";
-
-const DEFAULT_COMMAND =
-  "ffmpeg -i {input} -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k {output}";
+import { usePromptTemplate } from "@/lib/usePromptTemplate";
+import { defaultCommandTemplate, type FeatureTemplate } from "@/lib/ffmpeg-args";
 
 interface Props {
   inputFile: FileInfo | null;
@@ -19,35 +18,30 @@ interface Props {
 }
 
 export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
-  const cmd = useCommandState(DEFAULT_COMMAND);
+  const cmd = useCommandState(defaultCommandTemplate());
+  const prompts = usePromptTemplate();
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
-
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [pendingTemplate, setPendingTemplate] = useState<FeatureTemplate | null>(null);
-  const [promptValues, setPromptValues] = useState<Record<string, string>>({});
 
   function handleFeatureSelect(template: FeatureTemplate) {
     setActivePresetId(template.id);
     if (template.prompts && template.prompts.length > 0) {
-      const defaults: Record<string, string> = {};
-      template.prompts.forEach((p) => (defaults[p.key] = ""));
-      setPendingTemplate(template);
-      setPromptValues(defaults);
+      prompts.start(template);
     } else {
-      setPendingTemplate(null);
-      setPromptValues({});
+      prompts.cancel();
       cmd.requestApply(template.command);
     }
   }
 
   function handlePromptApply() {
-    if (!pendingTemplate) return;
-    const filled = applyPromptValues(pendingTemplate.command, promptValues);
-    setPendingTemplate(null);
-    setPromptValues({});
-    cmd.requestApply(filled);
+    const filled = prompts.apply();
+    if (filled) cmd.requestApply(filled);
+  }
+
+  function handlePromptCancel() {
+    prompts.cancel();
+    setActivePresetId(null);
   }
 
   async function handleRun() {
@@ -55,18 +49,13 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
     setError(null);
     setRunning(true);
     try {
-      const filled = cmd.command
-        .replace(/\{input\}/g, inputFile.path)
-        .replace(/\{output\}/g, outputPath);
+      const args = buildCommandArgs(cmd.command, inputFile.path, outputPath);
 
-      const args = parseCommandArgs(filled);
-      const cleaned = args[0]?.toLowerCase() === "ffmpeg" ? args.slice(1) : args;
-
-      const jobId = await startJob({
+      const jobId = await jobsService.start({
         inputPath: inputFile.path,
         outputPath,
         mode: "raw",
-        rawArgs: cleaned,
+        rawArgs: args,
       });
       onJobStart(jobId, outputPath);
     } catch (e) {
@@ -94,22 +83,14 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
       />
 
       <PromptTemplatePanel
-        template={pendingTemplate}
-        values={promptValues}
-        onValueChange={(key, value) =>
-          setPromptValues((prev) => ({ ...prev, [key]: value }))
-        }
+        template={prompts.pending}
+        values={prompts.values}
+        onValueChange={prompts.setValue}
         onApply={handlePromptApply}
-        onCancel={() => {
-          setPendingTemplate(null);
-          setPromptValues({});
-          setActivePresetId(null);
-        }}
+        onCancel={handlePromptCancel}
       />
 
-      {error && (
-        <p className="text-sm text-red-400">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
       <button
         onClick={handleRun}
@@ -122,4 +103,3 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
     </div>
   );
 }
-

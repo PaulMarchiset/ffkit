@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 import { FEATURE_TEMPLATES, CATEGORIES, type Category, type FeatureTemplate } from "@/lib/ffmpeg-args";
 
 interface Props {

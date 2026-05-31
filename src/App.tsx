@@ -7,6 +7,7 @@ import { SettingsPanel } from "@/components/Settings";
 import { EncoderBadge } from "@/components/EncoderBadge";
 import { FFKitLogo } from "@/components/icons/FFKitLogo";
 import { BookIcon } from "@/components/icons/BookIcon";
+import { WindowControls } from "@/components/WindowControls";
 import { filesService } from "@/lib/services/filesService";
 import { JobsProvider, useJobsList } from "@/lib/jobsContext";
 import { useAppBootstrap } from "@/lib/useAppBootstrap";
@@ -41,13 +42,20 @@ function AppShell() {
 
   return (
     <div className="dark min-h-screen bg-bg text-fg flex flex-col">
-      <header className="flex items-center justify-between px-7 py-5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <FFKitLogo />
+      <header
+        data-tauri-drag-region
+        className="flex items-center h-16 pl-7 flex-shrink-0 select-none"
+      >
+        <div data-tauri-drag-region className="flex items-center gap-3">
+          <span data-tauri-drag-region className="pointer-events-none">
+            <FFKitLogo />
+          </span>
           <EncoderBadge loading={encoderLoading} encoders={encoders} />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div data-tauri-drag-region className="flex-1 self-stretch" />
+
+        <div className="flex items-center gap-3 pr-3">
           <button
             onClick={() => setView(isSettings ? "main" : "settings")}
             className={cn(
@@ -69,10 +77,12 @@ function AppShell() {
             Documentation
           </button>
         </div>
+
+        <WindowControls />
       </header>
 
-      <main className="flex-1 min-h-0 overflow-y-auto">
-        <div className="min-h-full px-7 py-4 flex flex-col justify-center">
+      <main className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+        <div className="m-auto w-full px-7 pt-4 pb-[10vh]">
           {showProgress && activeJob ? (
             <JobProgress
               jobId={activeJob.id}

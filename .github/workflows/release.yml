@@ -1,0 +1,54 @@
+name: Release
+
+# Build, sign, and publish a Tauri release whenever a version tag is pushed.
+# The job creates a GitHub Release, uploads the Windows installer(s), and
+# generates the `latest.json` that the in-app updater polls.
+on:
+  push:
+    tags:
+      - "v*"
+
+# tauri-action needs to create the release and upload assets.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build, sign, and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          # Use the pushed tag (e.g. v1.2.0) as the release tag/name.
+          tagName: ${{ github.ref_name }}
+          releaseName: "FFKit ${{ github.ref_name }}"
+          releaseBody: "See the assets below to download and install."
+          releaseDraft: true
+          prerelease: false
+          # Emit latest.json so the updater endpoint resolves.
+          includeUpdaterJson: true

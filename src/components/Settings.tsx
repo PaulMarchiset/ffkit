@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, FolderOpen } from "lucide-react";
 import { pickOutputFolder } from "@/lib/dialogs";
+import { updaterService } from "@/lib/services/updaterService";
 import { useSettings } from "@/lib/settingsContext";
 import type { Settings, Quality, HardwareAccel, UpdateChannel } from "@/lib/types";
 import { Section } from "./ui/Section";
@@ -44,6 +45,15 @@ export function SettingsPanel({ onBack }: Props) {
   const [saved, setSaved] = useState(false);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  type UpdateState =
+    | { kind: "idle" }
+    | { kind: "checking" }
+    | { kind: "uptodate" }
+    | { kind: "available"; version: string }
+    | { kind: "installing"; progress: number }
+    | { kind: "error"; message: string };
+  const [updateState, setUpdateState] = useState<UpdateState>({ kind: "idle" });
+
   useEffect(() => {
     setLocal(persisted);
   }, [persisted]);
@@ -68,6 +78,25 @@ export function SettingsPanel({ onBack }: Props) {
       savedTimerRef.current = setTimeout(() => setSaved(false), SAVED_BANNER_MS);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleCheckUpdates() {
+    setUpdateState({ kind: "checking" });
+    try {
+      const update = await updaterService.check();
+      if (!update) {
+        setUpdateState({ kind: "uptodate" });
+        return;
+      }
+      setUpdateState({ kind: "available", version: update.version });
+      setUpdateState({ kind: "installing", progress: 0 });
+      await updaterService.install(update, (fraction) =>
+        setUpdateState({ kind: "installing", progress: fraction }),
+      );
+      // App relaunches on success; this line is effectively unreachable.
+    } catch (err) {
+      setUpdateState({ kind: "error", message: String(err) });
     }
   }
 
@@ -173,6 +202,28 @@ export function SettingsPanel({ onBack }: Props) {
               onChange={(v) => update("updateChannel", v as UpdateChannel)}
               options={UPDATE_CHANNEL_OPTIONS}
             />
+          </Row>
+          <Row label="Application updates">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted">
+                {updateState.kind === "uptodate" && "Up to date"}
+                {updateState.kind === "available" && `v${updateState.version} available`}
+                {updateState.kind === "installing" &&
+                  `Installing… ${Math.round(updateState.progress * 100)}%`}
+                {updateState.kind === "error" && (
+                  <span className="text-red-500">{updateState.message}</span>
+                )}
+              </span>
+              <button
+                onClick={handleCheckUpdates}
+                disabled={
+                  updateState.kind === "checking" || updateState.kind === "installing"
+                }
+                className="px-3 py-1.5 text-sm rounded-md border border-border-soft text-fg hover:bg-white/5 disabled:opacity-50 transition-colors"
+              >
+                {updateState.kind === "checking" ? "Checking…" : "Check for updates"}
+              </button>
+            </div>
           </Row>
         </Section>
       </div>

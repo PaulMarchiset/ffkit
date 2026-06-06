@@ -13,32 +13,32 @@ export function FeatureButtons({ onSelect, activeId }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex gap-1 flex-wrap">
+      <div className="flex gap-1.5 flex-wrap">
         {CATEGORIES.map((cat) => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
             className={cn(
-              "px-3 py-1 rounded-md text-xs font-medium transition-colors border leading-full",
+              "inline-flex items-center justify-center h-8 px-3.5 rounded-[9px] text-sm font-medium transition-colors",
               activeCategory === cat
-                ? "bg-accent/15 text-accent border-accent/30"
-                : "text-muted border-transparent hover:text-fg hover:border-border",
+                ? "bg-surface-2 text-fg"
+                : "text-muted ring-1 ring-inset ring-border-soft hover:text-fg hover:ring-border-hover",
             )}
           >
             {cat}
           </button>
         ))}
       </div>
-      <div className="flex gap-1.5 flex-wrap">
+      <div className="inline-flex self-start gap-1 p-1 rounded-[10px] bg-surface-2 border border-border-soft">
         {filtered.map((t) => (
           <button
             key={t.id}
             onClick={() => onSelect(t)}
             className={cn(
-              "px-3 py-1.5 rounded-[8px] text-sm border transition-colors",
+              "inline-flex items-center justify-center h-7 px-3 rounded-[7px] text-sm transition-colors",
               activeId === t.id
-                ? "bg-accent/10 text-accent border-accent/30"
-                : "text-subtle border-border-soft hover:text-fg hover:border-border-strong hover:bg-white/5",
+                ? "bg-white/10 text-fg"
+                : "text-muted hover:text-fg",
             )}
           >
             {t.label}

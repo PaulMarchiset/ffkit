@@ -28,9 +28,9 @@ export function SimpleMode({ onJobStart }: Props) {
   useEffect(() => {
     if (file) {
       const pattern = settings?.outputNaming ?? "{name}_ffkit";
-      setOutputPath(defaultOutputPath(file.path, pattern, settings?.outputFolder));
+      setOutputPath(defaultOutputPath(file.path, pattern, settings?.outputFolder, quality));
     }
-  }, [file, settings]);
+  }, [file, settings, quality]);
 
   async function handleConvert() {
     if (!file) return;
@@ -57,7 +57,7 @@ export function SimpleMode({ onJobStart }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6 max-w-2xl mx-auto w-full py-8">
+    <div className="flex flex-col items-center gap-6 max-w-2xl mx-auto w-full pt-[18vh] pb-8">
       <HeroGreeting />
 
       <div className="w-full flex flex-col gap-3">
@@ -105,7 +105,7 @@ export function SimpleMode({ onJobStart }: Props) {
       </div>
 
       {showAdvanced && (
-        <div className="w-full rounded-2xl border border-border-soft bg-surface overflow-hidden">
+        <div className="w-full rounded-2xl bg-surface overflow-hidden">
           <div className="px-5 py-4">
             <AdvancedMode inputFile={file} outputPath={outputPath} onJobStart={onJobStart} />
           </div>

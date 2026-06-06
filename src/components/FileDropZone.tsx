@@ -13,8 +13,7 @@ export function FileDropZone({ onClick, dragging, loading, error }: Props) {
   return (
     <div
       className={cn(
-        "relative w-full rounded-2xl bg-surface flex flex-col items-center justify-center gap-3 transition-all cursor-pointer",
-        "border border-border-subtle",
+        "relative w-full rounded-2xl bg-surface flex flex-col items-center justify-center gap-4 transition-all cursor-pointer",
         dragging ? "border-accent/50 bg-accent/5" : "hover:border-border",
         loading && "opacity-60 pointer-events-none",
       )}

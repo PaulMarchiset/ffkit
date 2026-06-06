@@ -43,14 +43,14 @@ function QualityPill({ preset, selected, onSelect }: PillProps) {
       className={cn(
         "flex items-center gap-2 px-4 py-2 rounded-[10px] border text-sm transition-all",
         selected
-          ? "border-accent/60 text-fg bg-accent/10"
+          ? "border-transparent text-fg bg-surface-2"
           : "border-border text-subtle hover:border-border-hover hover:text-fg bg-transparent",
       )}
     >
       <span
         className={cn(
           "flex-shrink-0 transition-colors",
-          selected ? "text-accent" : "text-subtle",
+          selected ? "text-fg" : "text-subtle",
         )}
       >
         {PRESET_ICONS[preset.id]}

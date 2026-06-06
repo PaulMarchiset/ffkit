@@ -1,4 +1,4 @@
-# FFKit — agent notes
+# FFkit — agent notes
 
 Tauri 2 desktop ffmpeg GUI. React 19 + Vite 7 + Tailwind v4 frontend in `src/`;
 Rust backend in `src-tauri/`.

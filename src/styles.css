@@ -3,7 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-accent: #5F8D42;
+  --color-accent: #518B2E;
   --color-surface: #232320;
   --color-muted: #87867E;
   --color-subtle: #C0BFB5;
@@ -11,7 +11,7 @@
   /* P4: neutrals — exact hex values previously inlined as arbitrary
      Tailwind classes (bg-[#1A1A18], text-[#E8E5DC], bg-[#141412]). */
   --color-bg: #1A1A18;
-  --color-fg: #E8E5DC;
+  --color-fg: #C0BFB5;
   --color-surface-2: #141412;
 
   /* P4: alpha-on-dark borders — exact alphas previously inlined as

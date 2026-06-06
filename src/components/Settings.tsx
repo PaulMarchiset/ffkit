@@ -1,22 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, FolderOpen } from "lucide-react";
+import { ArrowLeft, FolderOpen, Minus, Plus, RefreshCw } from "lucide-react";
+import { getVersion } from "@tauri-apps/api/app";
 import { pickOutputFolder } from "@/lib/dialogs";
 import { updaterService } from "@/lib/services/updaterService";
 import { useSettings } from "@/lib/settingsContext";
 import type { Settings, Quality, HardwareAccel, UpdateChannel } from "@/lib/types";
+import { cn } from "@/lib/cn";
 import { Section } from "./ui/Section";
 import { Row } from "./ui/Row";
 import { Select } from "./ui/Select";
 import { Toggle } from "./ui/Toggle";
+import { FeatherIcon, LuggageIcon, DiamondIcon } from "./icons/QualityIcons";
 
 interface Props {
   onBack: () => void;
 }
 
-const QUALITY_OPTIONS = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "lossless", label: "Lossless" },
+const QUALITY_SEGMENTS: { value: Quality; label: string; icon: React.ReactNode }[] = [
+  { value: "low", label: "Low", icon: <FeatherIcon /> },
+  { value: "medium", label: "Medium", icon: <LuggageIcon /> },
+  { value: "lossless", label: "Lossless", icon: <DiamondIcon /> },
 ];
 
 const HW_ACCEL_OPTIONS = [
@@ -24,15 +27,13 @@ const HW_ACCEL_OPTIONS = [
   { value: "software", label: "Force software (libx264)" },
 ];
 
-const CONCURRENT_OPTIONS = [1, 2, 3, 4].map((n) => ({
-  value: String(n),
-  label: String(n),
-}));
-
 const UPDATE_CHANNEL_OPTIONS = [
   { value: "stable", label: "Stable" },
   { value: "beta", label: "Beta" },
 ];
+
+const MIN_CONCURRENT = 1;
+const MAX_CONCURRENT = 4;
 
 const SAVED_BANNER_MS = 2000;
 
@@ -43,6 +44,7 @@ export function SettingsPanel({ onBack }: Props) {
   const [settings, setLocal] = useState<Settings | null>(persisted);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [appVersion, setAppVersion] = useState("");
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   type UpdateState =
@@ -57,6 +59,12 @@ export function SettingsPanel({ onBack }: Props) {
   useEffect(() => {
     setLocal(persisted);
   }, [persisted]);
+
+  useEffect(() => {
+    getVersion()
+      .then(setAppVersion)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -113,6 +121,31 @@ export function SettingsPanel({ onBack }: Props) {
     );
   }
 
+  const updateBusy =
+    updateState.kind === "checking" || updateState.kind === "installing";
+
+  const versionLabel = appVersion ? `FFkit ${appVersion}` : "FFkit";
+  let updateStatus: React.ReactNode;
+  switch (updateState.kind) {
+    case "checking":
+      updateStatus = `${versionLabel} — checking…`;
+      break;
+    case "uptodate":
+      updateStatus = `${versionLabel} — up to date`;
+      break;
+    case "available":
+      updateStatus = `${versionLabel} — v${updateState.version} available`;
+      break;
+    case "installing":
+      updateStatus = `${versionLabel} — installing… ${Math.round(updateState.progress * 100)}%`;
+      break;
+    case "error":
+      updateStatus = <span className="text-red-500">{updateState.message}</span>;
+      break;
+    default:
+      updateStatus = versionLabel;
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <button
@@ -123,18 +156,21 @@ export function SettingsPanel({ onBack }: Props) {
         Back
       </button>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         <Section title="Output">
-          <Row label="Default output folder">
-            <div className="flex gap-2 items-center">
-              <span className="text-sm text-muted truncate max-w-48">
-                {settings.outputFolder ?? "Same as input"}
-              </span>
+          <Row
+            label="Default output folder"
+            description="Where compressed files are saved"
+          >
+            <div className="flex items-center gap-2">
               <button
                 onClick={handlePickFolder}
-                className="p-1.5 rounded-lg border border-border-soft text-muted hover:bg-white/5 transition-colors"
+                className="flex items-center gap-4 px-3 py-2 rounded-lg border border-border-soft text-sm text-fg hover:bg-white/5 transition-colors"
               >
-                <FolderOpen className="w-4 h-4" />
+                <span className="truncate max-w-48">
+                  {settings.outputFolder ?? "Same as the input"}
+                </span>
+                <FolderOpen className="w-4 h-4 text-muted" />
               </button>
               {settings.outputFolder && (
                 <button
@@ -146,25 +182,55 @@ export function SettingsPanel({ onBack }: Props) {
               )}
             </div>
           </Row>
-          <Row label="Output name pattern">
-            <input
-              type="text"
-              value={settings.outputNaming}
-              onChange={(e) => update("outputNaming", e.target.value)}
-              className="w-48 px-2 py-1 text-sm rounded-md border border-border-soft bg-bg text-fg outline-none focus:border-accent/50"
-            />
-          </Row>
+
+          <div>
+            <div className="text-sm font-medium text-fg">Output name pattern</div>
+            <div className="text-sm text-muted mt-1">How exported files are named</div>
+            <div className="relative mt-3">
+              <span className="absolute left-3 top-2 text-accent font-mono text-sm select-none pointer-events-none">
+                &gt;
+              </span>
+              <input
+                type="text"
+                value={settings.outputNaming}
+                onChange={(e) => update("outputNaming", e.target.value)}
+                spellCheck={false}
+                className="w-full pl-7 pr-3 py-2 rounded-[10px] border border-border-soft bg-surface-2 text-fg font-mono text-sm outline-none focus:border-accent/40 transition-colors"
+              />
+            </div>
+            <p className="text-xs text-muted mt-2">
+              Use <code className="text-accent">&#123;name&#125;</code>{" "}
+              <code className="text-accent">&#123;date&#125;</code>{" "}
+              <code className="text-accent">&#123;quality&#125;</code> and{" "}
+              <code className="text-accent">&#123;ext&#125;</code> as placeholders.
+            </p>
+          </div>
         </Section>
 
         <Section title="Defaults">
-          <Row label="Default quality">
-            <Select
-              value={settings.defaultQuality}
-              onChange={(v) => update("defaultQuality", v as Quality)}
-              options={QUALITY_OPTIONS}
-            />
+          <Row label="Default quality" description="Preset selected on launch">
+            <div className="inline-flex gap-1 p-1 rounded-[10px] bg-bg">
+              {QUALITY_SEGMENTS.map((q) => (
+                <button
+                  key={q.value}
+                  onClick={() => update("defaultQuality", q.value)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-[7px] text-sm transition-colors",
+                    settings.defaultQuality === q.value
+                      ? "bg-white/10 text-fg"
+                      : "text-muted hover:text-fg",
+                  )}
+                >
+                  {q.icon}
+                  {q.label}
+                </button>
+              ))}
+            </div>
           </Row>
-          <Row label="Hardware acceleration">
+          <Row
+            label="Hardware acceleration"
+            description="Use the GPU when available"
+          >
             <Select
               value={settings.hardwareAccel}
               onChange={(v) => update("hardwareAccel", v as HardwareAccel)}
@@ -174,20 +240,47 @@ export function SettingsPanel({ onBack }: Props) {
         </Section>
 
         <Section title="Jobs">
-          <Row label="Max concurrent jobs">
-            <Select
-              value={String(settings.concurrentJobs)}
-              onChange={(v) => update("concurrentJobs", Number(v))}
-              options={CONCURRENT_OPTIONS}
-            />
+          <Row
+            label="Max concurrent jobs"
+            description="Files processed at the same time"
+          >
+            <div className="inline-flex items-center rounded-lg border border-border-soft ">
+              <button
+                onClick={() =>
+                  update("concurrentJobs", Math.max(MIN_CONCURRENT, settings.concurrentJobs - 1))
+                }
+                disabled={settings.concurrentJobs <= MIN_CONCURRENT}
+                className="px-2.5 py-1.5 text-muted hover:text-fg disabled:opacity-30 transition-colors"
+              >
+                <Minus className="w-4 h-6" />
+              </button>
+              <span className="w-8 text-center text-sm text-fg tabular-nums">
+                {settings.concurrentJobs}
+              </span>
+              <button
+                onClick={() =>
+                  update("concurrentJobs", Math.min(MAX_CONCURRENT, settings.concurrentJobs + 1))
+                }
+                disabled={settings.concurrentJobs >= MAX_CONCURRENT}
+                className="px-2.5 py-1.5 text-muted hover:text-fg disabled:opacity-30 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
           </Row>
-          <Row label="Notify when done">
+          <Row
+            label="Notify when done"
+            description="Send a system notification on completion"
+          >
             <Toggle
               value={settings.notifyOnDone}
               onChange={(v) => update("notifyOnDone", v)}
             />
           </Row>
-          <Row label="Open folder when done">
+          <Row
+            label="Open folder when done"
+            description="Reveal the output folder automatically"
+          >
             <Toggle
               value={settings.openFolderOnDone}
               onChange={(v) => update("openFolderOnDone", v)}
@@ -196,34 +289,25 @@ export function SettingsPanel({ onBack }: Props) {
         </Section>
 
         <Section title="Updates">
-          <Row label="Update channel">
+          <Row
+            label="Update channel"
+            description="Stable is recommended for most users"
+          >
             <Select
               value={settings.updateChannel}
               onChange={(v) => update("updateChannel", v as UpdateChannel)}
               options={UPDATE_CHANNEL_OPTIONS}
             />
           </Row>
-          <Row label="Application updates">
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted">
-                {updateState.kind === "uptodate" && "Up to date"}
-                {updateState.kind === "available" && `v${updateState.version} available`}
-                {updateState.kind === "installing" &&
-                  `Installing… ${Math.round(updateState.progress * 100)}%`}
-                {updateState.kind === "error" && (
-                  <span className="text-red-500">{updateState.message}</span>
-                )}
-              </span>
-              <button
-                onClick={handleCheckUpdates}
-                disabled={
-                  updateState.kind === "checking" || updateState.kind === "installing"
-                }
-                className="px-3 py-1.5 text-sm rounded-md border border-border-soft text-fg hover:bg-white/5 disabled:opacity-50 transition-colors"
-              >
-                {updateState.kind === "checking" ? "Checking…" : "Check for updates"}
-              </button>
-            </div>
+          <Row label="Application updates" description={updateStatus}>
+            <button
+              onClick={handleCheckUpdates}
+              disabled={updateBusy}
+              className="flex items-center gap-4 px-3 py-2 text-sm rounded-lg border border-border-soft  text-fg hover:bg-white/5 disabled:opacity-50 transition-colors"
+            >
+              {updateState.kind === "checking" ? "Checking…" : "Check for updates"}
+              <RefreshCw className="w-4 h-4 text-muted" />
+            </button>
           </Row>
         </Section>
       </div>
@@ -231,7 +315,7 @@ export function SettingsPanel({ onBack }: Props) {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="self-start px-6 py-2.5 rounded-xl font-semibold text-white bg-accent hover:bg-accent/85 disabled:opacity-50 transition-colors"
+        className="w-full py-3 rounded-xl text-base font-semibold text-white bg-accent hover:bg-accent/90 disabled:opacity-50 transition-colors"
       >
         {saved ? "Saved!" : saving ? "Saving…" : "Save settings"}
       </button>

@@ -24,14 +24,19 @@ export function CommandEditor({ command, onChange, onReset, isDirty }: Props) {
           </button>
         )}
       </div>
-      <textarea
-        value={command}
-        onChange={(e) => onChange(e.target.value)}
-        spellCheck={false}
-        rows={4}
-        className="w-full px-3 py-2.5 rounded-[10px] border border-border-soft bg-surface-2 text-accent font-mono text-sm resize-none outline-none focus:border-accent/40 transition-colors"
-        placeholder="ffmpeg -i {input} ... {output}"
-      />
+      <div className="relative">
+        <span className="absolute left-3 top-2.5 text-accent font-mono text-sm select-none pointer-events-none">
+          $
+        </span>
+        <textarea
+          value={command}
+          onChange={(e) => onChange(e.target.value)}
+          spellCheck={false}
+          rows={4}
+          className="w-full pl-7 pr-3 py-2.5 rounded-[10px] border border-border-soft bg-surface-2 text-fg font-mono text-sm resize-none outline-none focus:border-accent/40 transition-colors"
+          placeholder="ffmpeg -i {input} ... {output}"
+        />
+      </div>
       <p className="text-xs text-muted">
         Use <code className="text-accent">&#123;input&#125;</code> and{" "}
         <code className="text-accent">&#123;output&#125;</code> as path placeholders.

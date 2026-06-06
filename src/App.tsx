@@ -41,7 +41,7 @@ function AppShell() {
   const isSettings = view === "settings";
 
   return (
-    <div className="dark min-h-screen bg-bg text-fg flex flex-col">
+    <div className="dark h-screen bg-bg text-fg flex flex-col">
       <header
         data-tauri-drag-region
         className="flex items-center h-16 pl-7 flex-shrink-0 select-none"
@@ -61,7 +61,7 @@ function AppShell() {
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-md border text-sm transition-colors",
               isSettings
-                ? "border-accent/50 text-accent bg-accent/10"
+                ? "border-transparent text-fg bg-surface-2"
                 : "border-border-strong text-fg hover:bg-white/5",
             )}
           >
@@ -82,7 +82,7 @@ function AppShell() {
       </header>
 
       <main className="flex-1 min-h-0 overflow-y-auto flex flex-col">
-        <div className="m-auto w-full px-7 pt-4 pb-[10vh]">
+        <div className="mx-auto w-full px-7 pt-4 pb-[10vh]">
           {showProgress && activeJob ? (
             <JobProgress
               jobId={activeJob.id}

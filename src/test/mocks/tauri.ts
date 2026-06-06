@@ -1,5 +1,5 @@
 /**
- * Single-file mock for every Tauri-API surface FFKit imports.
+ * Single-file mock for every Tauri-API surface FFkit imports.
  * Vite aliases all four real modules to this file when MODE === "test".
  *
  *  - @tauri-apps/api/core           -> invoke

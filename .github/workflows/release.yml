@@ -37,6 +37,18 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      # ffmpeg/ffprobe are bundled as sidecars but gitignored (see README),
+      # so fetch the GPL build and drop them in with the target-triple names
+      # that tauri.conf.json's externalBin expects.
+      - name: Download ffmpeg/ffprobe sidecars
+        shell: bash
+        run: |
+          mkdir -p src-tauri/binaries
+          curl -L "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip" -o ffmpeg-archive
+          7z x ffmpeg-archive -o.
+          cp "ffmpeg-master-latest-win64-gpl/bin/ffmpeg.exe" "src-tauri/binaries/ffmpeg-x86_64-pc-windows-msvc.exe"
+          cp "ffmpeg-master-latest-win64-gpl/bin/ffprobe.exe" "src-tauri/binaries/ffprobe-x86_64-pc-windows-msvc.exe"
+
       - name: Build, sign, and publish
         uses: tauri-apps/tauri-action@v0
         env:
@@ -46,7 +58,7 @@ jobs:
         with:
           # Use the pushed tag (e.g. v1.2.0) as the release tag/name.
           tagName: ${{ github.ref_name }}
-          releaseName: "FFKit ${{ github.ref_name }}"
+          releaseName: "FFkit ${{ github.ref_name }}"
           releaseBody: "See the assets below to download and install."
           releaseDraft: true
           prerelease: false

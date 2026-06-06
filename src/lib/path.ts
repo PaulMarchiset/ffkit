@@ -1,3 +1,5 @@
+import type { Quality } from "./types";
+
 function pathSeparator(path: string): string {
   return path.includes("\\") ? "\\" : "/";
 }
@@ -19,14 +21,35 @@ function stripExtension(filename: string): string {
   return dot >= 0 ? filename.slice(0, dot) : filename;
 }
 
+/** Source file extension without the dot, lowercased (empty when none). */
+function extension(filename: string): string {
+  const base = basename(filename);
+  const dot = base.lastIndexOf(".");
+  return dot > 0 ? base.slice(dot + 1).toLowerCase() : "";
+}
+
+/** Local calendar date as YYYY-MM-DD. */
+function formatDate(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export function defaultOutputPath(
   inputPath: string,
   namingPattern: string,
   folderOverride?: string,
+  quality?: Quality,
 ): string {
   const sep = pathSeparator(inputPath);
   const dir = folderOverride ?? parentDir(inputPath);
   const name = stripExtension(basename(inputPath));
-  const outName = namingPattern.replace("{name}", name);
+  // {ext} is the source extension — the output container is always .mp4.
+  const outName = namingPattern
+    .split("{name}").join(name)
+    .split("{date}").join(formatDate(new Date()))
+    .split("{quality}").join(quality ?? "")
+    .split("{ext}").join(extension(inputPath));
   return `${dir}${sep}${outName}.mp4`;
 }

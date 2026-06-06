@@ -1,4 +1,4 @@
-# FFKit Landing Page Spec
+# FFkit Landing Page Spec
 
 This document describes what the marketing/download landing page should contain.
 Build it as a separate static site (not inside this repo).
@@ -8,7 +8,7 @@ Build it as a separate static site (not inside this repo).
 ## Page structure
 
 ### Hero
-- App name: **FFKit**
+- App name: **FFkit**
 - Tagline: "The cleanest way to use ffmpeg."
 - Sub-tagline: "No command line needed. Or go full command line if you want."
 - Primary CTA: Download buttons (Windows / macOS / Linux), auto-detect OS

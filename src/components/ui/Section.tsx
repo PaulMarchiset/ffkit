@@ -6,10 +6,12 @@ interface Props {
 export function Section({ title, children }: Props) {
   return (
     <div>
-      <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">
+      <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3 px-1">
         {title}
       </h3>
-      <div className="space-y-3">{children}</div>
+      <div className="rounded-2xl bg-surface px-6 py-6 space-y-6">
+        {children}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Zap } from "lucide-react";
 import { FeatureButtons } from "./FeatureButtons";
 import { CommandEditor } from "./CommandEditor";
 import { ConfirmOverwritePanel } from "./ConfirmOverwritePanel";
@@ -10,6 +9,7 @@ import { buildCommandArgs } from "@/lib/commandBuilder";
 import { useCommandState } from "@/lib/useCommandState";
 import { usePromptTemplate } from "@/lib/usePromptTemplate";
 import { defaultCommandTemplate, type FeatureTemplate } from "@/lib/ffmpeg-args";
+import { Zap } from "lucide-react";
 
 interface Props {
   inputFile: FileInfo | null;
@@ -95,9 +95,8 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
       <button
         onClick={handleRun}
         disabled={!inputFile || !outputPath || running}
-        className="flex items-center justify-center gap-2 py-2.5 rounded-[10px] text-sm font-medium text-white bg-accent hover:bg-accent/85 disabled:opacity-30 disabled:cursor-not-allowed transition-all "
-      >
-        <Zap className="w-4 h-4" />
+        className="w-full flex items-center justify-center py-3 rounded-[10px] text-base font-medium text-white bg-accent hover:bg-accent/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+      ><Zap className="mr-2 mb-1 scale-85" />
         {running ? "Starting…" : "Run"}
       </button>
     </div>

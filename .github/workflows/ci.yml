@@ -1,9 +1,9 @@
 name: Build
 
+# Cross-platform build verification. Release publishing lives in release.yml,
+# which owns the `v*` tags — keep this off tags to avoid two workflows racing
+# to create the same GitHub release.
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
 
 jobs:
@@ -113,7 +113,7 @@ jobs:
           # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: "FFKit ${{ github.ref_name }}"
-          releaseBody: "See the assets below to download this version of FFKit."
+          releaseName: "FFkit ${{ github.ref_name }}"
+          releaseBody: "See the assets below to download this version of FFkit."
           releaseDraft: true
           prerelease: false

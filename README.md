@@ -1,4 +1,4 @@
-# FFKit
+# FFkit
 
 A clean desktop GUI for ffmpeg. Simple mode lets you pick a file, choose quality, and convert. Advanced mode gives you raw ffmpeg command access with preset templates.
 
@@ -40,7 +40,7 @@ Installers are written to `src-tauri/target/release/bundle/`.
 
 ## Bundled binaries
 
-FFKit bundles ffmpeg/ffprobe as sidecars — it never uses the system-installed version.  
+FFkit bundles ffmpeg/ffprobe as sidecars — it never uses the system-installed version.  
 Place platform-specific binaries in `src-tauri/binaries/`:
 
 | Platform | Files |

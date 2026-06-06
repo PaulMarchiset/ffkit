@@ -18,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -43,14 +43,18 @@ jobs:
       # ffmpeg/ffprobe are bundled as sidecars but gitignored (see README),
       # so fetch the GPL build and drop them in with the target-triple names
       # that tauri.conf.json's externalBin expects.
+      # Pinned to a specific ffmpeg release (gyan.dev "essentials" GPL build —
+      # common codecs: x264/x265/VP8-9/AAC/Opus/etc.) so installer size is
+      # reproducible instead of tracking a rolling nightly. Bump the version
+      # here to upgrade ffmpeg; swap "essentials" → "full" for every codec.
       - name: Download ffmpeg/ffprobe sidecars
         shell: bash
         run: |
           mkdir -p src-tauri/binaries
-          curl -L "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip" -o ffmpeg-archive
-          7z x ffmpeg-archive -o.
-          cp "ffmpeg-master-latest-win64-gpl/bin/ffmpeg.exe" "src-tauri/binaries/ffmpeg-x86_64-pc-windows-msvc.exe"
-          cp "ffmpeg-master-latest-win64-gpl/bin/ffprobe.exe" "src-tauri/binaries/ffprobe-x86_64-pc-windows-msvc.exe"
+          curl -L "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-8.1.1-essentials_build.7z" -o ffmpeg.7z
+          7z x ffmpeg.7z -o.
+          cp "ffmpeg-8.1.1-essentials_build/bin/ffmpeg.exe"  "src-tauri/binaries/ffmpeg-x86_64-pc-windows-msvc.exe"
+          cp "ffmpeg-8.1.1-essentials_build/bin/ffprobe.exe" "src-tauri/binaries/ffprobe-x86_64-pc-windows-msvc.exe"
 
       - name: Build, sign, and publish
         uses: tauri-apps/tauri-action@v0

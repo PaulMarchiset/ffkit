@@ -14,8 +14,8 @@ jobs:
         include:
           - platform: windows-latest
             triple: x86_64-pc-windows-msvc
-            ffmpeg-url: "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
-            ffmpeg-bin: ffmpeg-master-latest-win64-gpl/bin
+            ffmpeg-url: "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-8.1.1-essentials_build.7z"
+            ffmpeg-bin: ffmpeg-8.1.1-essentials_build/bin
             ext: ".exe"
           - platform: macos-latest
             triple: aarch64-apple-darwin
@@ -30,10 +30,10 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm

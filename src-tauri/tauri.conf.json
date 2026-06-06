@@ -48,7 +48,7 @@
       "endpoints": [
         "https://github.com/PaulMarchiset/ffkit/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVGQkJEN0M2ODk5NDRBRTcKUldUblNwU0p4dGU3WDdYSis5aTltZ3c1MzJKWWdOWFNrTEd6WGRGNFhhZmlxME4ySG9LTmdsam8K",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDRDN0ZENEMyNTMyMDg1QjMKUldTemhTQlR3dFIvVEZ4M0FPaEFDOW5raEwxSGVRSUkvMngxZFBzWStzdzVpTG1hamJyK2JBZFQK",
       "windows": {
         "installMode": "passive"
       }

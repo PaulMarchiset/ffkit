@@ -34,8 +34,11 @@ jobs:
         with:
           workspaces: src-tauri
 
+      # Not `npm ci`: @tailwindcss/oxide-wasm32-wasi bundles @emnapi/* optional
+      # deps that npm prunes from the lockfile on win32, so `npm ci`'s strict
+      # in-sync check spuriously fails. `npm install` tolerates the gap.
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm install
 
       # ffmpeg/ffprobe are bundled as sidecars but gitignored (see README),
       # so fetch the GPL build and drop them in with the target-triple names

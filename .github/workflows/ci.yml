@@ -58,8 +58,10 @@ jobs:
             librsvg2-dev \
             patchelf
 
+      # See release.yml: npm ci fails on the oxide-wasm32-wasi/@emnapi optional
+      # deps pruned from the lockfile, so use the tolerant install.
       - name: Install npm dependencies
-        run: npm ci
+        run: npm install
 
       # ── Download ffmpeg / ffprobe ──────────────────────────────────────
 

@@ -21,7 +21,9 @@ export interface JobSpec {
   outputPath: string;
   mode: JobMode;
   quality?: Quality;
-  rawArgs?: string[];
+  /** Raw-mode command template ({input}/{output} placeholders); the backend
+   *  substitutes and tokenizes it. */
+  rawTemplate?: string;
   /** Duration in ms from the load-time probe; lets the backend skip re-probing. */
   totalDurationMs?: number;
 }

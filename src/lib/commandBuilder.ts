@@ -1,3 +1,8 @@
+// NOTE: as of the Rust port, raw-mode argument construction happens in the
+// backend (src-tauri/src/ffmpeg/raw_args.rs). This module is no longer on the
+// execution path — it is retained as the frozen TS reference that the parity
+// fixture/tests pin the Rust behavior against (tests/unit/rawArgs.parity.test.ts),
+// and as a building block for the command preview. Keep behavior frozen.
 import { parseCommandArgs } from "@/lib/shellArgs";
 
 /** Replace {input}/{output} placeholders in a command template. */

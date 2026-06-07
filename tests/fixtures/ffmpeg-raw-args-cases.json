@@ -1,0 +1,154 @@
+{
+  "_comment": "Shared parity fixture for ffmpeg Raw-mode arg construction. `expected` = the FROZEN current TS output of src/lib/shellArgs.ts (parseCommandArgs) + src/lib/commandBuilder.ts (buildCommandArgs); the TS reference test (tests/unit/rawArgs.parity.test.ts) asserts it. The Rust test (src-tauri/src/ffmpeg/raw_args.rs) asserts `rustExpected` when present, else `expected`. `rustExpected` marks an intentional, out-of-scope divergence: Rust does a clean literal str::replace and does NOT emulate JS String.replace's $-pattern interpretation (the $ cases). See each case's `note`.",
+
+  "tokenizer": [
+    { "name": "simple args", "input": "-i a.mp4 -c copy out.mp4", "expected": ["-i", "a.mp4", "-c", "copy", "out.mp4"] },
+    { "name": "collapse consecutive spaces", "input": "-i   a.mp4", "expected": ["-i", "a.mp4"] },
+    { "name": "leading and trailing spaces trimmed", "input": "  -i a.mp4  ", "expected": ["-i", "a.mp4"] },
+    { "name": "tab is a separator", "input": "-i\ta.mp4", "expected": ["-i", "a.mp4"] },
+    { "name": "double-quoted path with space (quotes stripped)", "input": "-i \"my file.mp4\"", "expected": ["-i", "my file.mp4"] },
+    { "name": "single-quoted path with space (quotes stripped)", "input": "-i 'my file.mp4'", "expected": ["-i", "my file.mp4"] },
+    { "name": "double quotes containing a single quote", "input": "-i \"it's here.mp4\"", "expected": ["-i", "it's here.mp4"] },
+    { "name": "single quotes containing double quotes", "input": "-i 'say \"hi\".mp4'", "expected": ["-i", "say \"hi\".mp4"] },
+    { "name": "empty double quotes vanish", "input": "-i \"\" x", "expected": ["-i", "x"] },
+    { "name": "adjacent quoted segment merges into neighbor", "input": "a\"b c\"d", "expected": ["ab cd"] },
+    { "name": "special chars unquoted are kept literally", "input": "-vf a&b(c)[d];e", "expected": ["-vf", "a&b(c)[d];e"] },
+    { "name": "accents kept", "input": "-i café-éà.mp4", "expected": ["-i", "café-éà.mp4"] },
+    { "name": "windows path with space, UNQUOTED -> splits", "input": "C:\\My Videos\\a.mp4", "expected": ["C:\\My", "Videos\\a.mp4"] },
+    { "name": "windows path with space, quoted -> single token", "input": "\"C:\\My Videos\\a.mp4\"", "expected": ["C:\\My Videos\\a.mp4"] },
+    { "name": "empty string", "input": "", "expected": [] },
+    { "name": "spaces only", "input": "    ", "expected": [] },
+    { "name": "unclosed quote keeps content, drops quote", "input": "-i \"unclosed", "expected": ["-i", "unclosed"] },
+    { "name": "filter graph special chars", "input": "-vf scale=-2:720,fps=30", "expected": ["-vf", "scale=-2:720,fps=30"] }
+  ],
+
+  "buildRawArgs": [
+    {
+      "name": "default H.264, posix paths",
+      "template": "ffmpeg -i {input} -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k {output}",
+      "input": "/home/u/in.mp4",
+      "output": "/home/u/out.mp4",
+      "expected": ["-i", "/home/u/in.mp4", "-c:v", "libx264", "-crf", "23", "-preset", "medium", "-c:a", "aac", "-b:a", "128k", "/home/u/out.mp4"]
+    },
+    {
+      "name": "windows paths, no spaces",
+      "template": "ffmpeg -i {input} -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k {output}",
+      "input": "C:\\videos\\in.mp4",
+      "output": "C:\\videos\\out.mp4",
+      "expected": ["-i", "C:\\videos\\in.mp4", "-c:v", "libx264", "-crf", "23", "-preset", "medium", "-c:a", "aac", "-b:a", "128k", "C:\\videos\\out.mp4"]
+    },
+    {
+      "name": "windows paths WITH spaces, unquoted template -> splits (current behavior)",
+      "template": "ffmpeg -i {input} -c copy {output}",
+      "input": "C:\\My Videos\\in.mp4",
+      "output": "C:\\My Videos\\out.mp4",
+      "expected": ["-i", "C:\\My", "Videos\\in.mp4", "-c", "copy", "C:\\My", "Videos\\out.mp4"],
+      "note": "BROKEN today: a space in the path splits it into two args. Frozen as-is (strict port reproduces this); fixed in a follow-up commit."
+    },
+    {
+      "name": "multiple {input}/{output} occurrences",
+      "template": "ffmpeg -i {input} -i {input} -map 0 {output} {output}",
+      "input": "a.mp4",
+      "output": "b.mp4",
+      "expected": ["-i", "a.mp4", "-i", "a.mp4", "-map", "0", "b.mp4", "b.mp4"]
+    },
+    {
+      "name": "no leading ffmpeg token (not stripped)",
+      "template": "-i {input} {output}",
+      "input": "a.mp4",
+      "output": "b.mp4",
+      "expected": ["-i", "a.mp4", "b.mp4"]
+    },
+    {
+      "name": "leading FFMPEG uppercase is stripped (case-insensitive)",
+      "template": "FFMPEG -i {input} {output}",
+      "input": "a.mp4",
+      "output": "b.mp4",
+      "expected": ["-i", "a.mp4", "b.mp4"]
+    },
+    {
+      "name": "gif filter graph with special chars",
+      "template": "ffmpeg -i {input} -vf fps=15,scale=480:-1:flags=lanczos -c:v gif {output}",
+      "input": "a.mp4",
+      "output": "b.gif",
+      "expected": ["-i", "a.mp4", "-vf", "fps=15,scale=480:-1:flags=lanczos", "-c:v", "gif", "b.gif"]
+    },
+    {
+      "name": "accents in paths",
+      "template": "ffmpeg -i {input} -c copy {output}",
+      "input": "/films/café/vidéo.mp4",
+      "output": "/films/café/sortie.mkv",
+      "expected": ["-i", "/films/café/vidéo.mp4", "-c", "copy", "/films/café/sortie.mkv"]
+    },
+    {
+      "name": "user manually quotes placeholders -> spaces preserved",
+      "template": "ffmpeg -i \"{input}\" \"{output}\"",
+      "input": "C:\\My Videos\\in.mp4",
+      "output": "C:\\My Videos\\out.mp4",
+      "expected": ["-i", "C:\\My Videos\\in.mp4", "C:\\My Videos\\out.mp4"]
+    },
+    {
+      "name": "extra spaces in template collapse",
+      "template": "ffmpeg   -i   {input}    {output}",
+      "input": "a.mp4",
+      "output": "b.mp4",
+      "expected": ["-i", "a.mp4", "b.mp4"]
+    },
+    {
+      "name": "path literally containing {output} (sequential replace also substitutes it)",
+      "template": "ffmpeg -i {input} {output}",
+      "input": "a{output}b.mp4",
+      "output": "OUT.mp4",
+      "expected": ["-i", "aOUT.mp4b.mp4", "OUT.mp4"],
+      "note": "Sequential replace: {input} first, then {output} globally — so the {output} injected by the input path is ALSO substituted. Rust must replicate input-then-output sequential replace to match."
+    },
+    {
+      "name": "plain dollar in path (no special pattern) -> literal",
+      "template": "ffmpeg -i {input} {output}",
+      "input": "a$b.mp4",
+      "output": "out.mp4",
+      "expected": ["-i", "a$b.mp4", "out.mp4"]
+    },
+    {
+      "name": "DOLLAR-AMPERSAND in input path (JS replace interprets $&)",
+      "template": "ffmpeg -i {input} {output}",
+      "input": "a$&b.mp4",
+      "output": "out.mp4",
+      "expected": ["-i", "a{input}b.mp4", "out.mp4"],
+      "rustExpected": ["-i", "a$&b.mp4", "out.mp4"],
+      "note": "DIVERGENCE VOLONTAIRE (hors périmètre). JS String.replace interprète $& comme la sous-chaîne capturée '{input}'. Rust fait un str::replace littéral — comportement voulu. Le résultat TS est un artefact accidentel de JS, pas une référence à préserver."
+    },
+    {
+      "name": "DOUBLE-DOLLAR in input path (JS replace collapses $$ -> $)",
+      "template": "ffmpeg -i {input} {output}",
+      "input": "a$$b.mp4",
+      "output": "out.mp4",
+      "expected": ["-i", "a$b.mp4", "out.mp4"],
+      "rustExpected": ["-i", "a$$b.mp4", "out.mp4"],
+      "note": "DIVERGENCE VOLONTAIRE (hors périmètre). JS réduit $$ à un seul $. Rust littéral garde $$ — comportement voulu."
+    },
+    {
+      "name": "DOLLAR-AMPERSAND in output path (JS replace interprets $&)",
+      "template": "ffmpeg -i {input} {output}",
+      "input": "in.mp4",
+      "output": "o$&x.mp4",
+      "expected": ["-i", "in.mp4", "o{output}x.mp4"],
+      "rustExpected": ["-i", "in.mp4", "o$&x.mp4"],
+      "note": "DIVERGENCE VOLONTAIRE (hors périmètre). Même interprétation $& côté output. Rust littéral — comportement voulu."
+    },
+    {
+      "name": "bare template is just the input token",
+      "template": "{input}",
+      "input": "a.mp4",
+      "output": "b.mp4",
+      "expected": ["a.mp4"]
+    },
+    {
+      "name": "empty template",
+      "template": "",
+      "input": "a.mp4",
+      "output": "b.mp4",
+      "expected": []
+    }
+  ]
+}

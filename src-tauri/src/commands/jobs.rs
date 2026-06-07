@@ -1,4 +1,5 @@
 use crate::ffmpeg::presets::preset_args;
+use crate::ffmpeg::raw_args::build_raw_args;
 use crate::ffmpeg::reader::run_job_reader;
 use crate::ffmpeg::runner::get_duration_ms;
 use crate::state::{AppState, JobEntry, JobState, JobStatus};
@@ -13,7 +14,9 @@ pub struct JobSpec {
     pub output_path: String,
     pub mode: JobMode,
     pub quality: Option<String>,
-    pub raw_args: Option<Vec<String>>,
+    /// Raw-mode command template (with {input}/{output} placeholders). The
+    /// backend substitutes + tokenizes it (see ffmpeg::raw_args::build_raw_args).
+    pub raw_template: Option<String>,
     /// Duration in ms, already known from the file probe at load time. When
     /// present we skip the redundant ffprobe; absent (or 0), we fall back to it.
     pub total_duration_ms: Option<i64>,
@@ -174,9 +177,10 @@ fn build_args(spec: &JobSpec, encoder: &str) -> Result<Vec<String>, String> {
             args.push(spec.output_path.clone());
         }
         JobMode::Raw => {
-            // raw_args already contain -i; paths are substituted by the frontend.
-            if let Some(raw) = &spec.raw_args {
-                args.extend(raw.clone());
+            // The backend owns substitution + tokenization (the template already
+            // contains -i; {input}/{output} are filled here, not by the frontend).
+            if let Some(template) = &spec.raw_template {
+                args.extend(build_raw_args(template, &spec.input_path, &spec.output_path));
             }
         }
     }

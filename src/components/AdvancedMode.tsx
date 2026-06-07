@@ -5,7 +5,6 @@ import { ConfirmOverwritePanel } from "./ConfirmOverwritePanel";
 import { PromptTemplatePanel } from "./PromptTemplatePanel";
 import { jobsService } from "@/lib/services/jobsService";
 import type { FileInfo } from "@/lib/types";
-import { buildCommandArgs } from "@/lib/commandBuilder";
 import { useCommandState } from "@/lib/useCommandState";
 import { usePromptTemplate } from "@/lib/usePromptTemplate";
 import {
@@ -64,13 +63,14 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
       // its extension to the active template's format (ffmpeg picks the muxer
       // from the output file name). For mp4 templates this is a no-op.
       const finalOutput = replaceExtension(outputPath, activeExt);
-      const args = buildCommandArgs(cmd.command, inputFile.path, finalOutput);
 
+      // The backend substitutes {input}/{output} and tokenizes the template
+      // (see ffmpeg::raw_args). The frontend only forwards the template + paths.
       const jobId = await jobsService.start({
         inputPath: inputFile.path,
         outputPath: finalOutput,
         mode: "raw",
-        rawArgs: args,
+        rawTemplate: cmd.command,
         totalDurationMs:
           inputFile.duration != null
             ? Math.round(inputFile.duration * 1000)

@@ -53,16 +53,25 @@ fn strip_leading_ffmpeg(mut args: Vec<String>) -> Vec<String> {
     args
 }
 
-/// Build the ffmpeg arg vector from a raw command template, substituting
-/// `{input}`/`{output}` and tokenizing.
+/// Build the ffmpeg arg vector from a raw command template.
+///
+/// The template is tokenized FIRST, then `{input}`/`{output}` are substituted
+/// into the resulting tokens. This is the fix for paths containing spaces: a
+/// substituted path lands inside a single, already-formed token, so it stays one
+/// argument (the old TS pipeline substituted first and then tokenized, which
+/// split spaced paths — see the "windows paths WITH spaces" case in the
+/// fixture, where `expected` is the pre-fix output and `rustExpected` the fix).
 ///
 /// Substitution is a literal, sequential replace (input then output) — unlike
-/// JS `String.replace`, `$`-patterns in the paths are NOT interpreted. This is a
+/// JS `String.replace`, `$`-patterns in the paths are NOT interpreted. That is a
 /// deliberate, documented divergence from the old TS behavior (see the `$` cases
 /// in the parity fixture).
 pub fn build_raw_args(template: &str, input: &str, output: &str) -> Vec<String> {
-    let filled = template.replace("{input}", input).replace("{output}", output);
-    strip_leading_ffmpeg(tokenize(&filled))
+    let substituted: Vec<String> = tokenize(template)
+        .into_iter()
+        .map(|tok| tok.replace("{input}", input).replace("{output}", output))
+        .collect();
+    strip_leading_ffmpeg(substituted)
 }
 
 #[cfg(test)]

@@ -1,5 +1,5 @@
 {
-  "_comment": "Shared parity fixture for ffmpeg Raw-mode arg construction. `expected` = the FROZEN current TS output of src/lib/shellArgs.ts (parseCommandArgs) + src/lib/commandBuilder.ts (buildCommandArgs); the TS reference test (tests/unit/rawArgs.parity.test.ts) asserts it. The Rust test (src-tauri/src/ffmpeg/raw_args.rs) asserts `rustExpected` when present, else `expected`. `rustExpected` marks an intentional, out-of-scope divergence: Rust does a clean literal str::replace and does NOT emulate JS String.replace's $-pattern interpretation (the $ cases). See each case's `note`.",
+  "_comment": "Shared parity fixture for ffmpeg Raw-mode arg construction. `expected` = the FROZEN current TS output of src/lib/shellArgs.ts (parseCommandArgs) + src/lib/commandBuilder.ts (buildCommandArgs); the TS reference test (tests/unit/rawArgs.parity.test.ts) asserts it. The Rust test (src-tauri/src/ffmpeg/raw_args.rs) asserts `rustExpected` when present, else `expected`. `rustExpected` is set in two situations: (1) intentional, out-of-scope divergence where Rust does a clean literal str::replace and does NOT emulate JS String.replace's $-pattern interpretation (the $ cases); (2) the deliberate SPACE FIX, where Rust tokenizes the template BEFORE substitution so paths with spaces stay a single arg. See each case's `note`.",
 
   "tokenizer": [
     { "name": "simple args", "input": "-i a.mp4 -c copy out.mp4", "expected": ["-i", "a.mp4", "-c", "copy", "out.mp4"] },
@@ -14,7 +14,7 @@
     { "name": "adjacent quoted segment merges into neighbor", "input": "a\"b c\"d", "expected": ["ab cd"] },
     { "name": "special chars unquoted are kept literally", "input": "-vf a&b(c)[d];e", "expected": ["-vf", "a&b(c)[d];e"] },
     { "name": "accents kept", "input": "-i café-éà.mp4", "expected": ["-i", "café-éà.mp4"] },
-    { "name": "windows path with space, UNQUOTED -> splits", "input": "C:\\My Videos\\a.mp4", "expected": ["C:\\My", "Videos\\a.mp4"] },
+    { "name": "windows path with space, UNQUOTED -> splits", "input": "C:\\My Videos\\a.mp4", "expected": ["C:\\My", "Videos\\a.mp4"], "note": "Tokenizer EN ISOLATION: une chaîne brute non quotée avec espace se découpe — comportement correct et INCHANGÉ. Le fix des espaces vit dans build_raw_args (cas pipeline 'windows paths WITH spaces'), qui tokenise le template AVANT de substituer les chemins." },
     { "name": "windows path with space, quoted -> single token", "input": "\"C:\\My Videos\\a.mp4\"", "expected": ["C:\\My Videos\\a.mp4"] },
     { "name": "empty string", "input": "", "expected": [] },
     { "name": "spaces only", "input": "    ", "expected": [] },
@@ -43,7 +43,8 @@
       "input": "C:\\My Videos\\in.mp4",
       "output": "C:\\My Videos\\out.mp4",
       "expected": ["-i", "C:\\My", "Videos\\in.mp4", "-c", "copy", "C:\\My", "Videos\\out.mp4"],
-      "note": "BROKEN today: a space in the path splits it into two args. Frozen as-is (strict port reproduces this); fixed in a follow-up commit."
+      "rustExpected": ["-i", "C:\\My Videos\\in.mp4", "-c", "copy", "C:\\My Videos\\out.mp4"],
+      "note": "FIX (pas portage). `expected` = ancien comportement TS cassé (le chemin se découpe sur l'espace). `rustExpected` = sortie corrigée : Rust tokenise le template AVANT substitution, donc le chemin avec espaces reste un seul argument."
     },
     {
       "name": "multiple {input}/{output} occurrences",

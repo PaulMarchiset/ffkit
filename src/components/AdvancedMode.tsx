@@ -8,7 +8,12 @@ import type { FileInfo } from "@/lib/types";
 import { buildCommandArgs } from "@/lib/commandBuilder";
 import { useCommandState } from "@/lib/useCommandState";
 import { usePromptTemplate } from "@/lib/usePromptTemplate";
-import { defaultCommandTemplate, type FeatureTemplate } from "@/lib/ffmpeg-args";
+import {
+  defaultCommandTemplate,
+  defaultTemplateExt,
+  type FeatureTemplate,
+} from "@/lib/ffmpeg-args";
+import { replaceExtension } from "@/lib/path";
 import { Zap } from "lucide-react";
 
 interface Props {
@@ -21,11 +26,17 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
   const cmd = useCommandState(defaultCommandTemplate());
   const prompts = usePromptTemplate();
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  // Output container extension for the active template. Seeded from the default
+  // template (mp4, matching the default command) and updated on each selection;
+  // the run output path's extension is derived from this so the file name
+  // matches the format the command actually encodes.
+  const [activeExt, setActiveExt] = useState(defaultTemplateExt());
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function handleFeatureSelect(template: FeatureTemplate) {
     setActivePresetId(template.id);
+    setActiveExt(template.ext);
     if (template.prompts && template.prompts.length > 0) {
       prompts.start(template);
     } else {
@@ -49,15 +60,23 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
     setError(null);
     setRunning(true);
     try {
-      const args = buildCommandArgs(cmd.command, inputFile.path, outputPath);
+      // The incoming outputPath is always the mp4 base from SimpleMode; correct
+      // its extension to the active template's format (ffmpeg picks the muxer
+      // from the output file name). For mp4 templates this is a no-op.
+      const finalOutput = replaceExtension(outputPath, activeExt);
+      const args = buildCommandArgs(cmd.command, inputFile.path, finalOutput);
 
       const jobId = await jobsService.start({
         inputPath: inputFile.path,
-        outputPath,
+        outputPath: finalOutput,
         mode: "raw",
         rawArgs: args,
+        totalDurationMs:
+          inputFile.duration != null
+            ? Math.round(inputFile.duration * 1000)
+            : undefined,
       });
-      onJobStart(jobId, outputPath);
+      onJobStart(jobId, finalOutput);
     } catch (e) {
       setError(String(e));
     } finally {

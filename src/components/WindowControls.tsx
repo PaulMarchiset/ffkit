@@ -1,6 +1,4 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
-
-const appWindow = getCurrentWindow();
+import { windowService } from "@/lib/services/windowService";
 
 /**
  * Custom-drawn Windows-style caption controls (minimize / maximize / close).
@@ -13,7 +11,7 @@ export function WindowControls() {
       <button
         type="button"
         aria-label="Minimize"
-        onClick={() => appWindow.minimize()}
+        onClick={() => windowService.minimize()}
         className="w-[46px] flex items-center justify-center text-fg/80 hover:bg-white/[0.08] transition-colors"
       >
         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
@@ -24,7 +22,7 @@ export function WindowControls() {
       <button
         type="button"
         aria-label="Maximize"
-        onClick={() => appWindow.toggleMaximize()}
+        onClick={() => windowService.toggleMaximize()}
         className="w-[46px] flex items-center justify-center text-fg/80 hover:bg-white/[0.08] transition-colors"
       >
         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
@@ -35,7 +33,7 @@ export function WindowControls() {
       <button
         type="button"
         aria-label="Close"
-        onClick={() => appWindow.close()}
+        onClick={() => windowService.close()}
         className="w-[46px] flex items-center justify-center text-fg/80 hover:bg-[#c42b1c] hover:text-white transition-colors"
       >
         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">

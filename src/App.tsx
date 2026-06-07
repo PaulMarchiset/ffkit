@@ -23,12 +23,9 @@ function AppShell() {
   const { encoders, encoderLoading } = useAppBootstrap();
   const { jobs: allJobs, dismiss: dismissJob } = useJobsList();
 
-  function handleJobStart(jobId: string, outputPath: string) {
-    setActiveJob({ id: jobId, outputPath });
-    setShowProgress(true);
-  }
-
-  function handleSelectJob(jobId: string, outputPath: string) {
+  // Open the progress view for a job — whether it was just started (SimpleMode)
+  // or picked from the dock (JobsDock). Both call sites share this behavior.
+  function showJobProgress(jobId: string, outputPath: string) {
     setActiveJob({ id: jobId, outputPath });
     setShowProgress(true);
   }
@@ -92,7 +89,7 @@ function AppShell() {
           ) : view === "settings" ? (
             <SettingsPanel onBack={() => setView("main")} />
           ) : (
-            <SimpleMode onJobStart={handleJobStart} />
+            <SimpleMode onJobStart={showJobProgress} />
           )}
         </div>
       </main>
@@ -100,7 +97,7 @@ function AppShell() {
       <JobsDock
         jobs={dockJobs}
         onDismiss={dismissJob}
-        onSelect={handleSelectJob}
+        onSelect={showJobProgress}
       />
     </div>
   );

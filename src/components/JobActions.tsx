@@ -1,9 +1,10 @@
 import { FolderOpen, RotateCcw, X } from "lucide-react";
 import { filesService } from "@/lib/services/filesService";
 import { parentDir } from "@/lib/path";
+import type { JobViewStatus } from "@/lib/types";
 
 interface Props {
-  status: "running" | "success" | "cancelled" | "failed";
+  status: JobViewStatus;
   cancelling: boolean;
   outputPath: string;
   onCancel: () => void;

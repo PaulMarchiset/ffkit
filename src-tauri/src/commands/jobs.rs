@@ -14,6 +14,9 @@ pub struct JobSpec {
     pub mode: JobMode,
     pub quality: Option<String>,
     pub raw_args: Option<Vec<String>>,
+    /// Duration in ms, already known from the file probe at load time. When
+    /// present we skip the redundant ffprobe; absent (or 0), we fall back to it.
+    pub total_duration_ms: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -35,7 +38,12 @@ pub async fn start_job(
 
     let encoder = resolve_encoder(&state).await;
     let args = build_args(&spec, &encoder)?;
-    let total_ms = get_duration_ms(&app, &spec.input_path).await;
+    // Reuse the duration the frontend already probed at file-load time; only
+    // re-probe when it's missing so progress/ETA still work for those files.
+    let total_ms = match spec.total_duration_ms {
+        Some(ms) if ms > 0 => Some(ms),
+        _ => get_duration_ms(&app, &spec.input_path).await,
+    };
 
     eprintln!("[ffkit] ffmpeg {}", args.join(" "));
 

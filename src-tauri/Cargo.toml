@@ -1,6 +1,6 @@
 [package]
 name = "ffkit"
-version = "1.3.1"
+version = "1.3.2"
 description = "FFkit — a clean desktop wrapper for ffmpeg"
 authors = ["FFkit Contributors"]
 license = "GPL-3.0"

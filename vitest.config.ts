@@ -13,6 +13,8 @@ export default defineConfig({
       "@tauri-apps/api/core": TAURI_MOCK,
       "@tauri-apps/api/event": TAURI_MOCK,
       "@tauri-apps/api/webviewWindow": TAURI_MOCK,
+      "@tauri-apps/api/window": TAURI_MOCK,
+      "@tauri-apps/api/app": TAURI_MOCK,
       "@tauri-apps/plugin-dialog": TAURI_MOCK,
     },
   },

@@ -6,6 +6,14 @@ export interface FeatureTemplate {
   label: string;
   command: string;
   category: Category;
+  /**
+   * Output container extension this template actually produces (no leading dot).
+   * This is the single source of truth for the output file's extension: ffmpeg
+   * picks the muxer from the output filename, so the name must match the format
+   * the command encodes. Copy/passthrough templates that don't transcode the
+   * container keep "mp4" to preserve existing behavior — see notes below.
+   */
+  ext: string;
   /** Fields that need extra user input before use */
   prompts?: Array<{ key: string; placeholder: string }>;
 }
@@ -18,18 +26,21 @@ export const FEATURE_TEMPLATES: FeatureTemplate[] = [
     label: "H.264",
     category: "Compress",
     command: "ffmpeg -i {input} -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k {output}",
+    ext: "mp4",
   },
   {
     id: "compress-h265",
     label: "H.265",
     category: "Compress",
     command: "ffmpeg -i {input} -c:v libx265 -crf 28 -preset medium -c:a aac -b:a 128k {output}",
+    ext: "mp4",
   },
   {
     id: "to-mp4",
     label: "to MP4",
     category: "Convert",
     command: "ffmpeg -i {input} -c:v libx264 -c:a aac {output}",
+    ext: "mp4",
   },
   {
     id: "to-webm",
@@ -37,12 +48,14 @@ export const FEATURE_TEMPLATES: FeatureTemplate[] = [
     category: "Convert",
     command:
       "ffmpeg -i {input} -c:v libvpx-vp9 -crf 32 -b:v 0 -c:a libopus -b:a 96k {output}",
+    ext: "webm",
   },
   {
     id: "to-mov",
     label: "to MOV",
     category: "Convert",
     command: "ffmpeg -i {input} -c:v libx264 -c:a aac {output}",
+    ext: "mov",
   },
   {
     id: "resize-1080p",
@@ -50,6 +63,7 @@ export const FEATURE_TEMPLATES: FeatureTemplate[] = [
     category: "Resize",
     command:
       "ffmpeg -i {input} -vf scale=-2:1080 -c:v libx264 -crf 23 -c:a copy {output}",
+    ext: "mp4",
   },
   {
     id: "resize-720p",
@@ -57,6 +71,7 @@ export const FEATURE_TEMPLATES: FeatureTemplate[] = [
     category: "Resize",
     command:
       "ffmpeg -i {input} -vf scale=-2:720 -c:v libx264 -crf 23 -c:a copy {output}",
+    ext: "mp4",
   },
   {
     id: "resize-480p",
@@ -64,37 +79,50 @@ export const FEATURE_TEMPLATES: FeatureTemplate[] = [
     category: "Resize",
     command:
       "ffmpeg -i {input} -vf scale=-2:480 -c:v libx264 -crf 23 -c:a copy {output}",
+    ext: "mp4",
   },
   {
     id: "audio-mp3",
     label: "Audio MP3",
     category: "Extract",
     command: "ffmpeg -i {input} -vn -c:a libmp3lame -b:a 192k {output}",
+    ext: "mp3",
   },
   {
     id: "audio-wav",
     label: "Audio WAV",
     category: "Extract",
     command: "ffmpeg -i {input} -vn -c:a pcm_s16le {output}",
+    ext: "wav",
   },
   {
+    // Copy-passthrough: drops the audio, copies the video stream. Output stays
+    // mp4 (matches prior behavior); a fully format-aware choice would follow the
+    // source container — see report's "ambiguous" note.
     id: "strip-audio",
     label: "Strip audio",
     category: "Extract",
     command: "ffmpeg -i {input} -an -c:v copy {output}",
+    ext: "mp4",
   },
   {
+    // Copy-passthrough: drops the video, copies the audio stream. Output stays
+    // mp4 (matches prior behavior); see report's "ambiguous" note.
     id: "strip-video",
     label: "Strip video",
     category: "Extract",
     command: "ffmpeg -i {input} -vn -c:a copy {output}",
+    ext: "mp4",
   },
   {
+    // Copy-passthrough trim (-c copy). Output stays mp4 (matches prior behavior);
+    // a format-aware choice would follow the source container — see report's note.
     id: "trim",
     label: "Trim",
     category: "Edit",
     command:
       "ffmpeg -i {input} -ss {start} -to {end} -c copy {output}",
+    ext: "mp4",
     prompts: [
       { key: "start", placeholder: "00:00:10" },
       { key: "end", placeholder: "00:01:00" },
@@ -105,6 +133,7 @@ export const FEATURE_TEMPLATES: FeatureTemplate[] = [
     label: "Framerate",
     category: "Edit",
     command: "ffmpeg -i {input} -vf fps={fps} -c:v libx264 -c:a copy {output}",
+    ext: "mp4",
     prompts: [{ key: "fps", placeholder: "30" }],
   },
   {
@@ -113,6 +142,7 @@ export const FEATURE_TEMPLATES: FeatureTemplate[] = [
     category: "Edit",
     command:
       "ffmpeg -i {input} -vf fps={fps},scale={width}:-1:flags=lanczos -c:v gif {output}",
+    ext: "gif",
     prompts: [
       { key: "fps", placeholder: "15" },
       { key: "width", placeholder: "480" },
@@ -136,4 +166,11 @@ export function defaultCommandTemplate(): string {
   const tpl = FEATURE_TEMPLATES.find((t) => t.id === DEFAULT_TEMPLATE_ID);
   if (!tpl) throw new Error(`Missing default template '${DEFAULT_TEMPLATE_ID}'`);
   return tpl.command;
+}
+
+/** Output extension matching {@link defaultCommandTemplate} (currently "mp4"). */
+export function defaultTemplateExt(): string {
+  const tpl = FEATURE_TEMPLATES.find((t) => t.id === DEFAULT_TEMPLATE_ID);
+  if (!tpl) throw new Error(`Missing default template '${DEFAULT_TEMPLATE_ID}'`);
+  return tpl.ext;
 }

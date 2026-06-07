@@ -92,6 +92,23 @@ export async function invoke<T>(cmd: string, args?: unknown): Promise<T> {
   return responder as T;
 }
 
+// `@tauri-apps/plugin-updater` evaluates `class Update extends Resource {}` at
+// import time, so `Resource` must be a real constructor here (this file is
+// aliased for @tauri-apps/api/core) for the test bundle to build — even though
+// no test ever invokes the updater. `Channel` is only constructed at call time.
+// These are inert stubs purely to satisfy module resolution.
+export class Resource {
+  constructor(public readonly rid: number = 0) {}
+  async close(): Promise<void> {}
+}
+
+export class Channel<T = unknown> {
+  onmessage: ((message: T) => void) | null = null;
+  toJSON(): string {
+    return "__CHANNEL__";
+  }
+}
+
 // ── @tauri-apps/api/event ────────────────────────────────────────────────
 
 export async function listen<T>(
@@ -106,6 +123,24 @@ export async function listen<T>(
   set.add(cb as EventCallback);
   return () => {
     set!.delete(cb as EventCallback);
+  };
+}
+
+// ── @tauri-apps/api/app ──────────────────────────────────────────────────
+
+// Empty string keeps the Settings version label as "FFkit" (matching prior
+// behavior, where the real getVersion() rejected under preview and was caught).
+export async function getVersion(): Promise<string> {
+  return "";
+}
+
+// ── @tauri-apps/api/window ───────────────────────────────────────────────
+
+export function getCurrentWindow() {
+  return {
+    minimize: async (): Promise<void> => {},
+    toggleMaximize: async (): Promise<void> => {},
+    close: async (): Promise<void> => {},
   };
 }
 

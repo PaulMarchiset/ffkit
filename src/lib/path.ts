@@ -36,6 +36,21 @@ function formatDate(d: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+/**
+ * Swap a path's file extension for `ext` (given without a leading dot),
+ * preserving the directory and base name. Handles names with multiple dots and
+ * names with no extension. Used to make an output path match the container a
+ * command actually encodes (e.g. turn `clip_ffkit.mp4` into `clip_ffkit.webm`).
+ */
+export function replaceExtension(path: string, ext: string): string {
+  const sep = pathSeparator(path);
+  const base = basename(path);
+  const name = stripExtension(base);
+  // basename === path means there was no separator; don't re-prefix the dir.
+  const prefix = base === path ? "" : `${parentDir(path)}${sep}`;
+  return `${prefix}${name}.${ext}`;
+}
+
 export function defaultOutputPath(
   inputPath: string,
   namingPattern: string,

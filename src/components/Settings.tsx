@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, FolderOpen, Minus, Plus, RefreshCw } from "lucide-react";
-import { getVersion } from "@tauri-apps/api/app";
 import { pickOutputFolder } from "@/lib/dialogs";
+import { systemService } from "@/lib/services/systemService";
 import { updaterService } from "@/lib/services/updaterService";
 import { useSettings } from "@/lib/settingsContext";
 import type { Settings, Quality, HardwareAccel, UpdateChannel } from "@/lib/types";
@@ -61,7 +61,8 @@ export function SettingsPanel({ onBack }: Props) {
   }, [persisted]);
 
   useEffect(() => {
-    getVersion()
+    systemService
+      .appVersion()
       .then(setAppVersion)
       .catch(() => {});
   }, []);

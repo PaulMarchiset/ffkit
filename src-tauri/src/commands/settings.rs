@@ -9,19 +9,26 @@ fn settings_path(app: &AppHandle) -> Result<std::path::PathBuf, String> {
         .join("settings.json"))
 }
 
-#[tauri::command]
-pub async fn get_settings(
-    state: tauri::State<'_, AppState>,
-    app: AppHandle,
-) -> Result<Settings, String> {
-    let path = settings_path(&app)?;
-    if path.exists() {
-        let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
-        if let Ok(loaded) = serde_json::from_str::<Settings>(&content) {
-            state.scheduler.set_limit(loaded.concurrent_jobs as usize);
-            *state.settings.lock().await = loaded;
-        }
+/// Load persisted settings from disk into `state` and apply the scheduler
+/// limit. Called once at startup (see lib.rs `setup`) so `get_settings` can stay
+/// a pure read. A missing/unreadable/invalid file leaves the in-memory defaults
+/// untouched. try_lock is safe here: the lock is uncontended at startup, and it
+/// avoids needing an async context in the synchronous setup hook.
+pub fn load_persisted_settings(app: &AppHandle, state: &AppState) {
+    let Ok(path) = settings_path(app) else { return };
+    if !path.exists() {
+        return;
     }
+    let Ok(content) = std::fs::read_to_string(&path) else { return };
+    let Ok(loaded) = serde_json::from_str::<Settings>(&content) else { return };
+    state.scheduler.set_limit(loaded.concurrent_jobs as usize);
+    if let Ok(mut settings) = state.settings.try_lock() {
+        *settings = loaded;
+    }
+}
+
+#[tauri::command]
+pub async fn get_settings(state: tauri::State<'_, AppState>) -> Result<Settings, String> {
     Ok(state.settings.lock().await.clone())
 }
 

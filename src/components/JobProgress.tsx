@@ -3,6 +3,7 @@ import { jobsService } from "@/lib/services/jobsService";
 import { useTypewriter } from "@/lib/useTypewriter";
 import { useJobEvents } from "@/lib/jobsContext";
 import { getPhasePool } from "@/lib/jobPhaseWords";
+import type { JobViewStatus } from "@/lib/types";
 import { JobStatusWord } from "./JobStatusWord";
 import { JobStatsLine } from "./JobStatsLine";
 import { JobActions } from "./JobActions";
@@ -13,8 +14,6 @@ interface Props {
   outputPath: string;
   onBack: () => void;
 }
-
-type JobStatus = "running" | "success" | "cancelled" | "failed";
 
 export function JobProgress({ jobId, outputPath, onBack }: Props) {
   const { progress, done, logLines } = useJobEvents(jobId);
@@ -43,7 +42,7 @@ export function JobProgress({ jobId, outputPath, onBack }: Props) {
     }
   }
 
-  const status: JobStatus = !done
+  const status: JobViewStatus = !done
     ? "running"
     : done.success
       ? "success"

@@ -22,6 +22,8 @@ export interface JobSpec {
   mode: JobMode;
   quality?: Quality;
   rawArgs?: string[];
+  /** Duration in ms from the load-time probe; lets the backend skip re-probing. */
+  totalDurationMs?: number;
 }
 
 export interface JobStatus {
@@ -35,6 +37,13 @@ export interface JobStatus {
   outputSize: number;
   error?: string;
 }
+
+/**
+ * The job status as the progress view models it: "running" until the job
+ * finishes, then one of the terminal outcomes. Distinct from the backend-shaped
+ * {@link JobStatus} (whose `state` includes "queued"/"done").
+ */
+export type JobViewStatus = "running" | "success" | "cancelled" | "failed";
 
 export interface HwEncoder {
   name: string;

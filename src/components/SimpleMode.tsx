@@ -42,6 +42,8 @@ export function SimpleMode({ onJobStart }: Props) {
         outputPath,
         mode: "preset",
         quality,
+        totalDurationMs:
+          file.duration != null ? Math.round(file.duration * 1000) : undefined,
       });
       onJobStart(jobId, outputPath);
     } catch (e) {

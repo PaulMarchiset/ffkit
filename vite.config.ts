@@ -10,6 +10,8 @@ const TAURI_MOCK_ALIASES = {
   "@tauri-apps/api/core": path.resolve(__dirname, "./src/test/mocks/tauri.ts"),
   "@tauri-apps/api/event": path.resolve(__dirname, "./src/test/mocks/tauri.ts"),
   "@tauri-apps/api/webviewWindow": path.resolve(__dirname, "./src/test/mocks/tauri.ts"),
+  "@tauri-apps/api/window": path.resolve(__dirname, "./src/test/mocks/tauri.ts"),
+  "@tauri-apps/api/app": path.resolve(__dirname, "./src/test/mocks/tauri.ts"),
   "@tauri-apps/plugin-dialog": path.resolve(__dirname, "./src/test/mocks/tauri.ts"),
 };
 

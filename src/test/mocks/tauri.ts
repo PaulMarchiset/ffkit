@@ -27,6 +27,7 @@ const DEFAULT_INVOKE_RESPONSES: Record<string, InvokeResponder> = {
     concurrentJobs: 1,
     notifyOnDone: true,
     openFolderOnDone: false,
+    animateGreeting: true,
   }),
   detect_encoders: () => ({
     available: [],

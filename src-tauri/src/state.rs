@@ -44,6 +44,16 @@ pub struct Settings {
     pub concurrent_jobs: u32,
     pub notify_on_done: bool,
     pub open_folder_on_done: bool,
+    /// Whether the home greeting cycles its action word with the typewriter
+    /// animation; when false the UI shows a static "ffmpeg". `serde(default)`
+    /// keeps older settings.json files (written before this field existed)
+    /// loadable instead of falling back to all defaults.
+    #[serde(default = "default_true")]
+    pub animate_greeting: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for Settings {
@@ -57,6 +67,7 @@ impl Default for Settings {
             concurrent_jobs: 1,
             notify_on_done: true,
             open_folder_on_done: false,
+            animate_greeting: true,
         }
     }
 }

@@ -16,6 +16,12 @@ export interface CommandState {
    * confirmation dialog; otherwise applies immediately.
    */
   requestApply(cmd: string): void;
+  /**
+   * Apply immediately, bypassing the dirty/overwrite check. Used by the
+   * parameter controls, whose edits are an explicit request to (re)build the
+   * command from the active template.
+   */
+  forceApply(cmd: string): void;
   /** Resolve the pending-overwrite dialog: keep the queued command. */
   confirmReplace(): void;
   /** Resolve the pending-overwrite dialog: discard the queued command. */
@@ -50,6 +56,7 @@ export function useCommandState(initial: string): CommandState {
         apply(cmd);
       }
     },
+    forceApply: apply,
     confirmReplace() {
       if (pendingCommand !== null) apply(pendingCommand);
     },

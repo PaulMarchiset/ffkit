@@ -80,7 +80,8 @@ describe("Jobs event subscription lifecycle (D2 closed)", () => {
         done: false,
       });
     });
-    expect(screen.getByText("42.5%")).toBeInTheDocument();
+    // The meter rounds to a whole percent (mockup shows "12%", not "12.0%").
+    expect(screen.getByText("43%")).toBeInTheDocument();
   });
 
   it("ignores events meant for a different jobId", async () => {

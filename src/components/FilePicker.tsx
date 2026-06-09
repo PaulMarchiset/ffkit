@@ -11,9 +11,18 @@ interface Props {
   onFile: (info: FileInfo) => void;
   onConvert?: () => void;
   converting?: boolean;
+  outputPath?: string;
+  onChangeOutput?: () => void;
 }
 
-export function FilePicker({ file, onFile, onConvert, converting }: Props) {
+export function FilePicker({
+  file,
+  onFile,
+  onConvert,
+  converting,
+  outputPath,
+  onChangeOutput,
+}: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,6 +62,8 @@ export function FilePicker({ file, onFile, onConvert, converting }: Props) {
         onClick={handlePick}
         onConvert={onConvert}
         converting={converting}
+        outputPath={outputPath}
+        onChangeOutput={onChangeOutput}
       />
     );
   }

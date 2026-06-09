@@ -1,4 +1,4 @@
-import { Loader2, Zap } from "lucide-react";
+import { FolderOpen, Loader2, Zap } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatBytes, formatDuration } from "@/lib/format";
 import type { FileInfo } from "@/lib/types";
@@ -9,54 +9,92 @@ interface Props {
   onClick: () => void;
   onConvert?: () => void;
   converting?: boolean;
+  /** When set, the derived output path is shown below the file info. */
+  outputPath?: string;
+  onChangeOutput?: () => void;
 }
 
-export function FileCard({ file, onClick, onConvert, converting }: Props) {
+export function FileCard({
+  file,
+  onClick,
+  onConvert,
+  converting,
+  outputPath,
+  onChangeOutput,
+}: Props) {
   return (
     <div
-      className="relative w-full rounded-2xl bg-surface border border-border-subtle px-5 py-7 cursor-pointer group hover:border-border transition-all"
+      className="relative w-full rounded-2xl bg-surface overflow-hidden cursor-pointer group transition-all"
       onClick={onClick}
     >
-      <div className="flex items-center gap-4 pr-14">
-        <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center">
-          <UploadIcon size={18} stroke="#5F8D42" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="font-medium text-fg truncate text-sm">{file.name}</p>
-          <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
-            <span>{formatBytes(file.size)}</span>
-            {file.duration != null && <span>{formatDuration(file.duration)}</span>}
-            {file.width && file.height && <span>{file.width}×{file.height}</span>}
-            {file.videoCodec && <span>{file.videoCodec.toUpperCase()}</span>}
+      {/* Top: file info — unchanged layout (relative so the convert button and
+          "Click to change" anchor to this section, not the whole card). */}
+      <div className="relative px-5 py-7">
+        <div className="flex items-center gap-4 pr-14">
+          <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center">
+            <UploadIcon size={18} stroke="#5F8D42" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-fg truncate text-sm">{file.name}</p>
+            <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
+              <span>{formatBytes(file.size)}</span>
+              {file.duration != null && <span>{formatDuration(file.duration)}</span>}
+              {file.width && file.height && <span>{file.width}×{file.height}</span>}
+              {file.videoCodec && <span>{file.videoCodec.toUpperCase()}</span>}
+            </div>
           </div>
         </div>
+
+        {onConvert && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onConvert();
+            }}
+            disabled={converting}
+            className={cn(
+              "absolute bottom-3 right-3 w-9 h-9 rounded-[10px] flex items-center justify-center transition-all",
+              "bg-accent hover:bg-accent/85",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
+            )}
+            title="Convert"
+          >
+            {converting ? (
+              <Loader2 className="w-4 h-4 text-white animate-spin" />
+            ) : (
+              <Zap className="w-4 h-4 text-white" />
+            )}
+          </button>
+        )}
+
+        <span className="absolute top-3 right-3 text-xs text-muted group-hover:text-subtle transition-colors">
+          Click to change
+        </span>
       </div>
 
-      {onConvert && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onConvert();
-          }}
-          disabled={converting}
-          className={cn(
-            "absolute bottom-3 right-3 w-9 h-9 rounded-[10px] flex items-center justify-center transition-all",
-            "bg-accent hover:bg-accent/85",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
-          )}
-          title="Convert"
+      {/* Bottom: the derived output path on a darker inset (no divider/border,
+          no "OUTPUT" label). The folder icon opens the save dialog to change it;
+          click propagation is stopped so it doesn't re-pick the input. */}
+      {outputPath && (
+        <div
+          className="flex items-center gap-3 px-5 py-3 bg-surface-2 cursor-default"
+          onClick={(e) => e.stopPropagation()}
         >
-          {converting ? (
-            <Loader2 className="w-4 h-4 text-white animate-spin" />
-          ) : (
-            <Zap className="w-4 h-4 text-white" />
+          <span className="min-w-0 flex-1 text-sm text-muted truncate">{outputPath}</span>
+          {onChangeOutput && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onChangeOutput();
+              }}
+              title="Change output path"
+              className="flex-shrink-0 text-muted hover:text-fg transition-colors"
+            >
+              <FolderOpen className="w-4 h-4" />
+            </button>
           )}
-        </button>
+        </div>
       )}
-
-      <span className="absolute top-3 right-3 text-xs text-muted group-hover:text-subtle transition-colors">
-        Click to change
-      </span>
     </div>
   );
 }

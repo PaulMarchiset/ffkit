@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "gen:installer-art": "node scripts/gen-installer-art.mjs",
     "build:test": "vite build --mode test",
     "preview:test": "vite preview --port 4173 --host 127.0.0.1",
     "test:serve": "npm run build:test && npm run preview:test",

@@ -1,52 +1,50 @@
 import type { FeatureTemplate } from "@/lib/ffmpeg-args";
+import type { FileInfo } from "@/lib/types";
+import { NumberPresetField } from "./NumberPresetField";
+import { TrimSelector } from "./TrimSelector";
 
 interface Props {
   template: FeatureTemplate | null;
   values: Record<string, string>;
   onValueChange: (key: string, value: string) => void;
-  onApply: () => void;
-  onCancel: () => void;
+  inputFile: FileInfo | null;
 }
 
+/**
+ * Renders the active feature's parameter controls. Values are applied live to
+ * the command (there is no Apply step). Dispatches on `promptUi`: the Trim
+ * timeline for "timeRange", labeled numeric fields with preset chips otherwise.
+ */
 export function PromptTemplatePanel({
   template,
   values,
   onValueChange,
-  onApply,
-  onCancel,
+  inputFile,
 }: Props) {
-  if (!template?.prompts) return null;
-  return (
-    <div className="rounded-[10px] border border-accent/20 bg-accent/5 p-3 flex flex-col gap-2">
-      <p className="text-xs font-medium text-accent">{template.label} — parameters</p>
-      <div className="grid grid-cols-2 gap-2">
-        {template.prompts.map((p) => (
-          <div key={p.key}>
-            <label className="text-xs text-muted mb-1 block">{p.key}</label>
-            <input
-              type="text"
-              placeholder={p.placeholder}
-              value={values[p.key] ?? ""}
-              onChange={(e) => onValueChange(p.key, e.target.value)}
-              className="w-full px-2 py-1.5 text-sm rounded-[8px] border border-border bg-bg text-fg outline-none focus:border-accent/50 transition-colors"
-            />
-          </div>
+  if (!template?.prompts || template.prompts.length === 0) return null;
+
+  const content =
+    template.promptUi === "timeRange" ? (
+      <TrimSelector
+        inputFile={inputFile}
+        startValue={values.start ?? ""}
+        endValue={values.end ?? ""}
+        onChange={onValueChange}
+      />
+    ) : (
+      <div className="grid grid-cols-2 gap-4">
+        {template.prompts.map((field) => (
+          <NumberPresetField
+            key={field.key}
+            field={field}
+            value={values[field.key] ?? ""}
+            onChange={(v) => onValueChange(field.key, v)}
+          />
         ))}
       </div>
-      <div className="flex gap-2">
-        <button
-          onClick={onApply}
-          className="px-3 py-1.5 text-xs font-medium rounded-[8px] bg-accent hover:bg-accent/85 text-white transition-colors"
-        >
-          Apply
-        </button>
-        <button
-          onClick={onCancel}
-          className="px-3 py-1.5 text-xs font-medium rounded-[8px] border border-border text-muted hover:text-fg hover:border-border-hover transition-colors"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  );
+    );
+
+  // Extra breathing room between the command editor's help text and the
+  // parameter controls (on top of AdvancedMode's gap-3).
+  return <div className="mt-4">{content}</div>;
 }

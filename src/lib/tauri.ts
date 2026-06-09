@@ -16,6 +16,9 @@ import type {
 export const probeFile = (path: string) =>
   invoke<FileInfo>("probe_file", { path });
 
+export const extractWaveform = (path: string, buckets: number) =>
+  invoke<number[]>("extract_waveform", { path, buckets });
+
 export const detectEncoders = () => invoke<EncoderList>("detect_encoders");
 
 export const startJob = (spec: JobSpec) =>

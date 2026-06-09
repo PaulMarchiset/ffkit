@@ -4,11 +4,13 @@ import { CommandEditor } from "./CommandEditor";
 import { ConfirmOverwritePanel } from "./ConfirmOverwritePanel";
 import { PromptTemplatePanel } from "./PromptTemplatePanel";
 import { jobsService } from "@/lib/services/jobsService";
-import type { FileInfo } from "@/lib/types";
+import type { FileInfo, JobInputMeta } from "@/lib/types";
 import { useCommandState } from "@/lib/useCommandState";
 import { usePromptTemplate } from "@/lib/usePromptTemplate";
 import {
+  applyPromptValues,
   defaultCommandTemplate,
+  defaultPromptValues,
   defaultTemplateExt,
   type FeatureTemplate,
 } from "@/lib/ffmpeg-args";
@@ -18,7 +20,7 @@ import { Zap } from "lucide-react";
 interface Props {
   inputFile: FileInfo | null;
   outputPath: string;
-  onJobStart: (jobId: string, outputPath: string) => void;
+  onJobStart: (jobId: string, outputPath: string, input?: JobInputMeta) => void;
 }
 
 export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
@@ -37,21 +39,23 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
     setActivePresetId(template.id);
     setActiveExt(template.ext);
     if (template.prompts && template.prompts.length > 0) {
+      // Seed defaults and reflect the fully substituted command immediately;
+      // the parameter controls then drive the command live (no Apply step).
+      const values = defaultPromptValues(template);
       prompts.start(template);
+      cmd.requestApply(applyPromptValues(template.command, values));
     } else {
       prompts.cancel();
       cmd.requestApply(template.command);
     }
   }
 
-  function handlePromptApply() {
-    const filled = prompts.apply();
-    if (filled) cmd.requestApply(filled);
-  }
-
-  function handlePromptCancel() {
-    prompts.cancel();
-    setActivePresetId(null);
+  function handleParamChange(key: string, value: string) {
+    prompts.setValue(key, value);
+    if (prompts.pending) {
+      const next = { ...prompts.values, [key]: value };
+      cmd.forceApply(applyPromptValues(prompts.pending.command, next));
+    }
   }
 
   async function handleRun() {
@@ -76,7 +80,11 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
             ? Math.round(inputFile.duration * 1000)
             : undefined,
       });
-      onJobStart(jobId, finalOutput);
+      onJobStart(jobId, finalOutput, {
+        size: inputFile.size,
+        durationMs:
+          inputFile.duration != null ? Math.round(inputFile.duration * 1000) : undefined,
+      });
     } catch (e) {
       setError(String(e));
     } finally {
@@ -104,9 +112,8 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
       <PromptTemplatePanel
         template={prompts.pending}
         values={prompts.values}
-        onValueChange={prompts.setValue}
-        onApply={handlePromptApply}
-        onCancel={handlePromptCancel}
+        onValueChange={handleParamChange}
+        inputFile={inputFile}
       />
 
       {error && <p className="text-sm text-red-400">{error}</p>}
@@ -114,7 +121,7 @@ export function AdvancedMode({ inputFile, outputPath, onJobStart }: Props) {
       <button
         onClick={handleRun}
         disabled={!inputFile || !outputPath || running}
-        className="w-full flex items-center justify-center py-3 rounded-[10px] text-base font-medium text-white bg-accent hover:bg-accent/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        className="mt-3 w-full flex items-center justify-center py-2 rounded-[10px] text-base font-medium text-white bg-accent hover:bg-accent/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
       ><Zap className="mr-2 mb-1 scale-85" />
         {running ? "Starting…" : "Run"}
       </button>

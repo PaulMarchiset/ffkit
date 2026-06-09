@@ -28,6 +28,16 @@ export interface JobSpec {
   totalDurationMs?: number;
 }
 
+/**
+ * Lightweight input-file metadata forwarded from the converter to the progress
+ * view, so the result card can show the size reduction ("SAVED") and clip
+ * length ("TIME") without re-probing the file.
+ */
+export interface JobInputMeta {
+  size?: number;
+  durationMs?: number;
+}
+
 export interface JobStatus {
   id: string;
   inputPath: string;
@@ -78,6 +88,9 @@ export interface Settings {
   concurrentJobs: number;
   notifyOnDone: boolean;
   openFolderOnDone: boolean;
+  /** Cycle the home greeting's action word with the typewriter animation;
+   *  when false the greeting shows a static "ffmpeg". */
+  animateGreeting: boolean;
 }
 
 export interface JobProgressEvent {

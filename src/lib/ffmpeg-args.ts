@@ -1,6 +1,21 @@
 export const CATEGORIES = ["Compress", "Convert", "Resize", "Extract", "Edit"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
+/** A single user-supplied parameter substituted into a template command. */
+export interface PromptField {
+  /** Placeholder name in the command, e.g. "fps" for `{fps}`. */
+  key: string;
+  /** Human label shown above the control, e.g. "Frames per second". */
+  label: string;
+  /** Example value; also seeded as the field's default so the command is
+   *  immediately complete. */
+  placeholder: string;
+  /** Optional unit suffix rendered inside the input (e.g. "fps", "px"). */
+  unit?: string;
+  /** Quick-pick values rendered as chips below a numeric field. */
+  presets?: string[];
+}
+
 export interface FeatureTemplate {
   id: string;
   label: string;
@@ -15,7 +30,14 @@ export interface FeatureTemplate {
    */
   ext: string;
   /** Fields that need extra user input before use */
-  prompts?: Array<{ key: string; placeholder: string }>;
+  prompts?: PromptField[];
+  /**
+   * How the prompt fields are presented. "fields" (default) renders labeled
+   * numeric inputs with preset chips; "timeRange" renders the Trim selection
+   * timeline (waveform + draggable start/end handles). The timeRange UI expects
+   * exactly a `start` and an `end` prompt holding "HH:MM:SS" timecodes.
+   */
+  promptUi?: "fields" | "timeRange";
 }
 
 export const DEFAULT_TEMPLATE_ID = "compress-h264";
@@ -123,9 +145,10 @@ export const FEATURE_TEMPLATES: FeatureTemplate[] = [
     command:
       "ffmpeg -i {input} -ss {start} -to {end} -c copy {output}",
     ext: "mp4",
+    promptUi: "timeRange",
     prompts: [
-      { key: "start", placeholder: "00:00:10" },
-      { key: "end", placeholder: "00:01:00" },
+      { key: "start", label: "Start", placeholder: "00:00:10" },
+      { key: "end", label: "End", placeholder: "00:01:00" },
     ],
   },
   {
@@ -134,7 +157,15 @@ export const FEATURE_TEMPLATES: FeatureTemplate[] = [
     category: "Edit",
     command: "ffmpeg -i {input} -vf fps={fps} -c:v libx264 -c:a copy {output}",
     ext: "mp4",
-    prompts: [{ key: "fps", placeholder: "30" }],
+    prompts: [
+      {
+        key: "fps",
+        label: "Frames per second",
+        placeholder: "30",
+        unit: "fps",
+        presets: ["24", "30", "60"],
+      },
+    ],
   },
   {
     id: "gif",
@@ -144,11 +175,31 @@ export const FEATURE_TEMPLATES: FeatureTemplate[] = [
       "ffmpeg -i {input} -vf fps={fps},scale={width}:-1:flags=lanczos -c:v gif {output}",
     ext: "gif",
     prompts: [
-      { key: "fps", placeholder: "15" },
-      { key: "width", placeholder: "480" },
+      {
+        key: "fps",
+        label: "Frames per second",
+        placeholder: "10",
+        unit: "fps",
+        presets: ["10", "15", "24"],
+      },
+      {
+        key: "width",
+        label: "Width",
+        placeholder: "320",
+        unit: "px",
+        presets: ["320", "480", "600"],
+      },
     ],
   },
 ];
+
+/** Seed the default value for each prompt (its placeholder doubles as default),
+ *  so a freshly selected template yields a fully substituted command. */
+export function defaultPromptValues(t: FeatureTemplate): Record<string, string> {
+  const values: Record<string, string> = {};
+  (t.prompts ?? []).forEach((p) => (values[p.key] = p.placeholder));
+  return values;
+}
 
 /** Apply user-supplied prompt values to a template command. */
 export function applyPromptValues(

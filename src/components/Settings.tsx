@@ -240,6 +240,18 @@ export function SettingsPanel({ onBack }: Props) {
           </Row>
         </Section>
 
+        <Section title="Interface">
+          <Row
+            label="Animate greeting"
+            description='Cycle the action word; off shows just "ffmpeg"'
+          >
+            <Toggle
+              value={settings.animateGreeting}
+              onChange={(v) => update("animateGreeting", v)}
+            />
+          </Row>
+        </Section>
+
         <Section title="Jobs">
           <Row
             label="Max concurrent jobs"

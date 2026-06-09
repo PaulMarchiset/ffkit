@@ -1,20 +1,22 @@
 import { useEffect, useState } from "react";
-import { FolderOpen, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { FilePicker } from "./FilePicker";
 import { QualityButtons } from "./QualityButtons";
 import { AdvancedMode } from "./AdvancedMode";
 import { HeroGreeting } from "./HeroGreeting";
 import { jobsService } from "@/lib/services/jobsService";
 import { pickOutputFile } from "@/lib/dialogs";
-import type { FileInfo, Quality } from "@/lib/types";
+import type { FileInfo, JobInputMeta, Quality } from "@/lib/types";
 import { defaultOutputPath } from "@/lib/path";
 import { useSettings } from "@/lib/settingsContext";
 
 interface Props {
-  onJobStart: (jobId: string, outputPath: string) => void;
+  onJobStart: (jobId: string, outputPath: string, input?: JobInputMeta) => void;
+  /** Bumped by "Convert another" to clear the selected media (settings kept). */
+  resetNonce?: number;
 }
 
-export function SimpleMode({ onJobStart }: Props) {
+export function SimpleMode({ onJobStart, resetNonce }: Props) {
   const { settings } = useSettings();
   const [file, setFile] = useState<FileInfo | null>(null);
   const [quality, setQuality] = useState<Quality>(
@@ -32,6 +34,16 @@ export function SimpleMode({ onJobStart }: Props) {
     }
   }, [file, settings, quality]);
 
+  // "Convert another": clear the media so the drop zone returns, ready for a new
+  // file. Quality / advanced settings are intentionally left untouched. Guarded
+  // so the initial render (nonce 0) doesn't clear anything.
+  useEffect(() => {
+    if (!resetNonce) return;
+    setFile(null);
+    setOutputPath("");
+    setError(null);
+  }, [resetNonce]);
+
   async function handleConvert() {
     if (!file) return;
     setError(null);
@@ -45,7 +57,10 @@ export function SimpleMode({ onJobStart }: Props) {
         totalDurationMs:
           file.duration != null ? Math.round(file.duration * 1000) : undefined,
       });
-      onJobStart(jobId, outputPath);
+      onJobStart(jobId, outputPath, {
+        size: file.size,
+        durationMs: file.duration != null ? Math.round(file.duration * 1000) : undefined,
+      });
     } catch (e) {
       setError(String(e));
     } finally {
@@ -68,6 +83,8 @@ export function SimpleMode({ onJobStart }: Props) {
           onFile={setFile}
           onConvert={file ? handleConvert : undefined}
           converting={converting}
+          outputPath={file ? outputPath : undefined}
+          onChangeOutput={handleChangeOutput}
         />
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center">
@@ -87,21 +104,6 @@ export function SimpleMode({ onJobStart }: Props) {
             </button>
           </div>
         </div>
-
-        {file && (
-          <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1 px-3 py-2 rounded-xl border border-border-soft bg-surface text-sm text-muted truncate">
-              {outputPath || "—"}
-            </div>
-            <button
-              onClick={handleChangeOutput}
-              className="flex-shrink-0 p-2 rounded-xl border border-border-soft text-muted hover:text-fg hover:border-border-strong transition-colors"
-              title="Change output path"
-            >
-              <FolderOpen className="w-4 h-4" />
-            </button>
-          </div>
-        )}
 
         {error && <p className="text-sm text-red-400">{error}</p>}
       </div>

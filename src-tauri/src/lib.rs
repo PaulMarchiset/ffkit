@@ -2,7 +2,7 @@ pub mod commands;
 pub mod ffmpeg;
 pub mod state;
 
-use commands::{encoders, jobs, probe, settings, system};
+use commands::{encoders, jobs, probe, settings, system, waveform};
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -23,6 +23,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             probe::probe_file,
+            waveform::extract_waveform,
             encoders::detect_encoders,
             jobs::start_job,
             jobs::cancel_job,

@@ -1,47 +1,39 @@
-import { FolderOpen, RotateCcw, X } from "lucide-react";
-import { filesService } from "@/lib/services/filesService";
-import { parentDir } from "@/lib/path";
+import { Layers, RotateCw, X } from "lucide-react";
 import type { JobViewStatus } from "@/lib/types";
 
 interface Props {
   status: JobViewStatus;
   cancelling: boolean;
-  outputPath: string;
   onCancel: () => void;
   onBack: () => void;
+  onConvertAnother: () => void;
 }
 
-export function JobActions({ status, cancelling, outputPath, onCancel, onBack }: Props) {
-  const isDone = status !== "running";
-  const isSuccess = status === "success";
-  return (
-    <div className="flex gap-3">
-      {!isDone && (
-        <button
-          onClick={onCancel}
-          disabled={cancelling}
-          className="flex items-center gap-2 px-4 py-2 rounded-full border border-border-strong text-sm text-muted hover:text-fg hover:border-white/25 transition-colors disabled:opacity-40"
-        >
+const BTN =
+  "flex items-center gap-2.5 px-5 py-3 rounded-xl border border-border-soft text-sm text-muted hover:text-fg hover:bg-white/5 hover:border-border-strong transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
+
+export function JobActions({ status, cancelling, onCancel, onBack, onConvertAnother }: Props) {
+  if (status === "running") {
+    return (
+      <div className="flex gap-3">
+        {/* "Run in background" leaves the job running and returns to the
+            converter; the dock keeps tracking it. */}
+        <button onClick={onBack} className={BTN}>
+          <Layers className="w-4 h-4" />
+          Run in background
+        </button>
+        <button onClick={onCancel} disabled={cancelling} className={BTN}>
           <X className="w-4 h-4" />
           Cancel
         </button>
-      )}
-      {isSuccess && (
-        <button
-          onClick={() => filesService.openPath(parentDir(outputPath))}
-          className="flex items-center gap-2 px-4 py-2 rounded-full border border-accent/50 text-sm text-accent bg-accent/10 hover:bg-accent/15 transition-colors"
-        >
-          <FolderOpen className="w-4 h-4" />
-          Open folder
-        </button>
-      )}
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 px-4 py-2 rounded-full border border-border-strong text-sm text-fg hover:bg-white/5 transition-colors"
-      >
-        <RotateCcw className="w-4 h-4" />
-        {isDone ? "Convert another" : "Background"}
-      </button>
-    </div>
+      </div>
+    );
+  }
+
+  return (
+    <button onClick={onConvertAnother} className={BTN}>
+      <RotateCw className="w-4 h-4" />
+      Convert another
+    </button>
   );
 }

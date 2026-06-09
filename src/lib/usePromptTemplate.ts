@@ -1,19 +1,26 @@
 import { useState } from "react";
-import { applyPromptValues, type FeatureTemplate } from "@/lib/ffmpeg-args";
+import {
+  applyPromptValues,
+  defaultPromptValues,
+  type FeatureTemplate,
+} from "@/lib/ffmpeg-args";
 
 export interface PromptTemplateState {
   pending: FeatureTemplate | null;
   values: Record<string, string>;
+  /** Begin editing a template's parameters, seeding defaults. */
   start(template: FeatureTemplate): void;
   setValue(key: string, value: string): void;
-  apply(): string | null;
+  /** The template command with the current values substituted in. */
+  resolve(): string | null;
   cancel(): void;
 }
 
 /**
- * Manages the "feature template → optional prompt fields → resolved command"
- * state machine. Returns a non-null command from `apply()` when prompts are
- * filled; returns null otherwise (caller should bail out).
+ * Holds the active feature template and its live parameter values. Values are
+ * seeded from each field's placeholder so the resolved command is complete the
+ * moment a template is selected — the parameter controls then drive the command
+ * editor in real time (there is no separate "apply" step).
  */
 export function usePromptTemplate(): PromptTemplateState {
   const [pending, setPending] = useState<FeatureTemplate | null>(null);
@@ -23,20 +30,15 @@ export function usePromptTemplate(): PromptTemplateState {
     pending,
     values,
     start(template) {
-      const defaults: Record<string, string> = {};
-      (template.prompts ?? []).forEach((p) => (defaults[p.key] = ""));
       setPending(template);
-      setValues(defaults);
+      setValues(defaultPromptValues(template));
     },
     setValue(key, value) {
       setValues((prev) => ({ ...prev, [key]: value }));
     },
-    apply() {
+    resolve() {
       if (!pending) return null;
-      const filled = applyPromptValues(pending.command, values);
-      setPending(null);
-      setValues({});
-      return filled;
+      return applyPromptValues(pending.command, values);
     },
     cancel() {
       setPending(null);

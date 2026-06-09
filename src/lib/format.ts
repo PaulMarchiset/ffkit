@@ -14,6 +14,32 @@ export function formatDuration(secs: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+/** Seconds → zero-padded "HH:MM:SS" (ffmpeg -ss/-to timecode form). */
+export function formatTimecode(secs: number): string {
+  const clamped = Math.max(0, Math.floor(secs));
+  const h = Math.floor(clamped / 3600);
+  const m = Math.floor((clamped % 3600) / 60);
+  const s = clamped % 60;
+  return [h, m, s].map((n) => String(n).padStart(2, "0")).join(":");
+}
+
+/**
+ * Parse "HH:MM:SS", "MM:SS", "SS", or a bare seconds number into seconds.
+ * Returns null when the string isn't a recognizable timecode.
+ */
+export function parseTimecode(value: string): number | null {
+  const trimmed = value.trim();
+  if (trimmed === "") return null;
+  const parts = trimmed.split(":");
+  if (parts.length > 3) return null;
+  let total = 0;
+  for (const part of parts) {
+    if (!/^\d*\.?\d+$/.test(part)) return null;
+    total = total * 60 + parseFloat(part);
+  }
+  return Number.isFinite(total) ? total : null;
+}
+
 export function formatEta(secs: number): string {
   if (!isFinite(secs) || secs <= 0) return "—";
   if (secs < 60) return `${Math.round(secs)}s`;

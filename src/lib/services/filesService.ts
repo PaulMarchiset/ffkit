@@ -1,4 +1,4 @@
-import { openPath, openUrl, probeFile } from "@/lib/tauri";
+import { extractWaveform, openPath, openUrl, probeFile } from "@/lib/tauri";
 import type { FileInfo } from "@/lib/types";
 
 /**
@@ -9,6 +9,9 @@ import type { FileInfo } from "@/lib/types";
  */
 export const filesService = {
   probe: (path: string): Promise<FileInfo> => probeFile(path),
+  /** Normalized audio peak amplitudes (0..1) for waveform rendering. */
+  waveform: (path: string, buckets: number): Promise<number[]> =>
+    extractWaveform(path, buckets),
   openPath: (path: string): Promise<void> => openPath(path),
   openUrl: (url: string): Promise<void> => openUrl(url),
 };

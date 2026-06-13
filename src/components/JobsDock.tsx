@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { DockJob } from "@/lib/jobsContext";
 import { JobRow } from "./JobRow";
 
@@ -9,15 +11,16 @@ interface Props {
   onSelect?: (id: string, outputPath: string) => void;
 }
 
-function summarize(jobs: DockJob[]): string {
+function summarize(jobs: DockJob[], t: TFunction): string {
   const running = jobs.filter(
     (j) => j.state === "running" || j.state === "queued",
   ).length;
-  if (running > 0) return `${running} running`;
-  return `${jobs.length} ${jobs.length === 1 ? "job" : "jobs"}`;
+  if (running > 0) return t("dock.running", { count: running });
+  return t("dock.jobs", { count: jobs.length });
 }
 
 export function JobsDock({ jobs, onDismiss, onSelect }: Props) {
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
 
   if (jobs.length === 0) return null;
@@ -29,7 +32,7 @@ export function JobsDock({ jobs, onDismiss, onSelect }: Props) {
         className="w-full px-5 py-2 flex items-center justify-between text-xs text-muted hover:text-fg transition-colors"
       >
         <span>
-          Jobs <span className="ml-1 text-fg">· {summarize(jobs)}</span>
+          {t("dock.title")} <span className="ml-1 text-fg">· {summarize(jobs, t)}</span>
         </span>
         {collapsed ? (
           <ChevronUp className="w-3.5 h-3.5" />

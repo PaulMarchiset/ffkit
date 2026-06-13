@@ -1,0 +1,181 @@
+{
+  "common": {
+    "documentation": "Documentation",
+    "settings": "Settings",
+    "back": "Back",
+    "cancel": "Cancel",
+    "advanced": "Advanced",
+    "dismiss": "Dismiss",
+    "loading": "Loading…"
+  },
+  "hero": {
+    "greetingPrefix": "Hello, ready to ",
+    "greetingSuffix": "?",
+    "verbs": ["compress", "trim", "convert", "resize", "extract", "transcode", "ffmpeg"]
+  },
+  "dropzone": {
+    "idle": "Drop your video here",
+    "active": "Drop your video",
+    "reading": "Reading file…"
+  },
+  "fileCard": {
+    "clickToChange": "Click to change",
+    "convert": "Convert"
+  },
+  "quality": {
+    "low": {
+      "label": "Low",
+      "tooltip": "CRF 30 — good for sharing or streaming where file size matters."
+    },
+    "medium": {
+      "label": "Medium",
+      "tooltip": "CRF 23 — the ffmpeg default. Great all-around choice."
+    },
+    "lossless": {
+      "label": "Lossless",
+      "tooltip": "CRF 18 — visually lossless H.264. Larger file. For true mathematically lossless, use Advanced mode."
+    }
+  },
+  "category": {
+    "Compress": "Compress",
+    "Convert": "Convert",
+    "Resize": "Resize",
+    "Extract": "Extract",
+    "Edit": "Edit"
+  },
+  "feature": {
+    "compress-h264": "H.264",
+    "compress-h265": "H.265",
+    "to-mp4": "to MP4",
+    "to-webm": "to WebM (VP9)",
+    "to-mov": "to MOV",
+    "resize-1080p": "1080p",
+    "resize-720p": "720p",
+    "resize-480p": "480p",
+    "audio-mp3": "Audio MP3",
+    "audio-wav": "Audio WAV",
+    "strip-audio": "Strip audio",
+    "strip-video": "Strip video",
+    "trim": "Trim",
+    "framerate": "Framerate",
+    "gif": "GIF"
+  },
+  "field": {
+    "fps": "Frames per second",
+    "width": "Width",
+    "start": "Start",
+    "end": "End"
+  },
+  "command": {
+    "label": "ffmpeg command",
+    "reset": "Reset",
+    "helpBefore": "Use",
+    "helpMid": "and",
+    "helpAfter": "as path placeholders."
+  },
+  "trim": {
+    "selection": "Selection",
+    "readingAudio": "Reading audio…"
+  },
+  "job": {
+    "done": "Done.",
+    "cancelled": "Cancelled.",
+    "failed": "Failed.",
+    "speed": "Speed",
+    "written": "Written",
+    "realtime": "Realtime",
+    "size": "Size",
+    "time": "Time",
+    "saved": "Saved",
+    "runInBackground": "Run in background",
+    "convertAnother": "Convert another",
+    "log": "ffmpeg log",
+    "notifyBody": "{{name}} is ready",
+    "state": { "done": "Done", "cancelled": "Cancelled", "failed": "Failed" }
+  },
+  "dock": {
+    "title": "Jobs",
+    "running": "{{count}} running",
+    "jobs_one": "{{count}} job",
+    "jobs_other": "{{count}} jobs"
+  },
+  "confirm": {
+    "title": "Replace your edited command?",
+    "replace": "Replace",
+    "keepMine": "Keep mine"
+  },
+  "settings": {
+    "sections": {
+      "output": "Output",
+      "defaults": "Defaults",
+      "interface": "Interface",
+      "jobs": "Jobs",
+      "updates": "Updates"
+    },
+    "outputFolder": {
+      "label": "Default output folder",
+      "description": "Where compressed files are saved",
+      "sameAsInput": "Same as the input",
+      "clear": "Clear"
+    },
+    "naming": {
+      "title": "Output name pattern",
+      "description": "How exported files are named",
+      "helpBefore": "Use",
+      "helpAfter": "as placeholders."
+    },
+    "defaultQuality": {
+      "label": "Default quality",
+      "description": "Preset selected on launch"
+    },
+    "hardwareAccel": {
+      "label": "Hardware acceleration",
+      "description": "Use the GPU when available",
+      "auto": "Auto (recommended)",
+      "software": "Force software (libx264)"
+    },
+    "theme": {
+      "label": "Theme",
+      "description": "System follows your OS appearance",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "language": {
+      "label": "Language",
+      "description": "Language used across the app",
+      "system": "System"
+    },
+    "animateGreeting": {
+      "label": "Animate greeting",
+      "description": "Cycle the action word; off shows just \"ffmpeg\""
+    },
+    "concurrentJobs": {
+      "label": "Max concurrent jobs",
+      "description": "Files processed at the same time"
+    },
+    "notify": {
+      "label": "Notify when done",
+      "description": "Send a system notification on completion"
+    },
+    "openFolder": {
+      "label": "Open folder when done",
+      "description": "Reveal the output folder automatically"
+    },
+    "updateChannel": {
+      "label": "Update channel",
+      "description": "Stable is recommended for most users",
+      "stable": "Stable",
+      "beta": "Beta"
+    },
+    "updates": {
+      "label": "Application updates",
+      "checking": "checking…",
+      "uptodate": "up to date",
+      "available": "v{{version}} available",
+      "installing": "installing… {{percent}}%",
+      "checkButton": "Check for updates",
+      "checkingButton": "Checking…"
+    }
+  }
+}

@@ -50,10 +50,26 @@ pub struct Settings {
     /// loadable instead of falling back to all defaults.
     #[serde(default = "default_true")]
     pub animate_greeting: bool,
+    /// "system" | "light" | "dark". `serde(default)` keeps older settings.json
+    /// files (written before this field) loadable.
+    #[serde(default = "default_theme")]
+    pub theme: String,
+    /// "system" | "en" | "fr". `serde(default)` keeps older settings.json files
+    /// (written before this field) loadable.
+    #[serde(default = "default_language")]
+    pub language: String,
 }
 
 fn default_true() -> bool {
     true
+}
+
+fn default_theme() -> String {
+    "dark".to_string()
+}
+
+fn default_language() -> String {
+    "system".to_string()
 }
 
 impl Default for Settings {
@@ -68,6 +84,8 @@ impl Default for Settings {
             notify_on_done: true,
             open_folder_on_done: false,
             animate_greeting: true,
+            theme: "dark".to_string(),
+            language: "system".to_string(),
         }
     }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { formatTimecode, parseTimecode } from "@/lib/format";
 import { useWaveform } from "@/lib/useWaveform";
@@ -23,6 +24,7 @@ interface Props {
  * no audio the track renders a flat baseline and still works as a scrubber.
  */
 export function TrimSelector({ inputFile, startValue, endValue, onChange }: Props) {
+  const { t } = useTranslation();
   const duration = inputFile?.duration ?? null;
   const { peaks, loading } = useWaveform(
     inputFile?.path ?? null,
@@ -83,7 +85,7 @@ export function TrimSelector({ inputFile, startValue, endValue, onChange }: Prop
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
-        <label className="text-sm text-muted">Selection</label>
+        <label className="text-sm text-muted">{t("trim.selection")}</label>
         <span className="font-mono text-sm text-fg tabular-nums">
           {formatTimecode(Math.max(0, endSec - startSec))}
         </span>
@@ -103,7 +105,7 @@ export function TrimSelector({ inputFile, startValue, endValue, onChange }: Prop
                 key={i}
                 className={cn(
                   "flex-1 rounded-full transition-colors",
-                  selected ? "bg-accent" : "bg-white/15",
+                  selected ? "bg-accent" : "bg-elevate-5",
                 )}
                 style={{ height: `${Math.max(4, h * MAX_BAR_PCT)}%` }}
               />
@@ -130,14 +132,14 @@ export function TrimSelector({ inputFile, startValue, endValue, onChange }: Prop
 
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span className="text-xs text-muted">Reading audio…</span>
+            <span className="text-xs text-muted">{t("trim.readingAudio")}</span>
           </div>
         )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <TimeField label="Start" value={startValue} onChange={(v) => onChange("start", v)} />
-        <TimeField label="End" value={endValue} onChange={(v) => onChange("end", v)} />
+        <TimeField label={t("field.start")} value={startValue} onChange={(v) => onChange("start", v)} />
+        <TimeField label={t("field.end")} value={endValue} onChange={(v) => onChange("end", v)} />
       </div>
     </div>
   );

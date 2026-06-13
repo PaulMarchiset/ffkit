@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { FEATURE_TEMPLATES, CATEGORIES, type Category, type FeatureTemplate } from "@/lib/ffmpeg-args";
 
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function FeatureButtons({ onSelect, activeId }: Props) {
+  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState<Category>(CATEGORIES[0]);
   const filtered = FEATURE_TEMPLATES.filter((t) => t.category === activeCategory);
 
@@ -25,23 +27,23 @@ export function FeatureButtons({ onSelect, activeId }: Props) {
                 : "text-muted ring-1 ring-inset ring-border-soft hover:text-fg hover:ring-border-hover",
             )}
           >
-            {cat}
+            {t(`category.${cat}`)}
           </button>
         ))}
       </div>
-      <div className="inline-flex self-start gap-1 p-1 rounded-[10px] bg-surface-2 border border-border-soft">
-        {filtered.map((t) => (
+      <div className="inline-flex self-start gap-1 p-1 rounded-[10px] bg-surface-2 border border-border-soft light:border-transparent">
+        {filtered.map((tpl) => (
           <button
-            key={t.id}
-            onClick={() => onSelect(t)}
+            key={tpl.id}
+            onClick={() => onSelect(tpl)}
             className={cn(
               "inline-flex items-center justify-center h-7 px-3 rounded-[7px] text-sm transition-colors",
-              activeId === t.id
-                ? "bg-white/10 text-fg"
+              activeId === tpl.id
+                ? "bg-elevate-4 text-fg"
                 : "text-muted hover:text-fg",
             )}
           >
-            {t.label}
+            {t(`feature.${tpl.id}`)}
           </button>
         ))}
       </div>

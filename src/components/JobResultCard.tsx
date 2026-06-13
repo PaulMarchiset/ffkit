@@ -1,4 +1,5 @@
 import { FolderOpen, PlaySquare } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { filesService } from "@/lib/services/filesService";
 import { basename, parentDir } from "@/lib/path";
 import { formatBytes, formatTimecode } from "@/lib/format";
@@ -17,6 +18,7 @@ interface Props {
 /** The success card: file name + location with a folder shortcut, plus the
  *  size / duration / size-saved stats. */
 export function JobResultCard({ outputPath, outputSize, durationMs, inputSize }: Props) {
+  const { t } = useTranslation();
   const sep = outputPath.includes("\\") ? "\\" : "/";
   const name = basename(outputPath).replace(/\.[^.]+$/, "");
   const dir = `${parentDir(outputPath)}${sep}`;
@@ -30,7 +32,7 @@ export function JobResultCard({ outputPath, outputSize, durationMs, inputSize }:
     reduction == null ? "text-muted" : reduction >= 0 ? "text-accent" : "text-red-400";
 
   return (
-    <div className="w-full rounded-2xl bg-white/[0.03] p-5 flex flex-col gap-6">
+    <div className="w-full rounded-2xl bg-elevate-1 p-5 flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <div className="flex-shrink-0 grid place-items-center w-10 h-10 rounded-lg bg-accent/15 text-accent">
           <PlaySquare className="w-5 h-5" />
@@ -49,12 +51,12 @@ export function JobResultCard({ outputPath, outputSize, durationMs, inputSize }:
       </div>
 
       <div className="grid grid-cols-3">
-        <JobStat value={formatBytes(outputSize)} label="Size" />
+        <JobStat value={formatBytes(outputSize)} label={t("job.size")} />
         <JobStat
           value={durationMs != null ? formatTimecode(durationMs / 1000) : "—"}
-          label="Time"
+          label={t("job.time")}
         />
-        <JobStat value={savedText} label="Saved" valueClassName={savedClass} />
+        <JobStat value={savedText} label={t("job.saved")} valueClassName={savedClass} />
       </div>
     </div>
   );

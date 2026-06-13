@@ -15,6 +15,8 @@ export type Quality = "low" | "medium" | "lossless";
 export type JobMode = "preset" | "raw";
 export type HardwareAccel = "auto" | "software";
 export type UpdateChannel = "stable" | "beta";
+export type Theme = "system" | "light" | "dark";
+export type LanguagePref = "system" | "en" | "fr";
 
 export interface JobSpec {
   inputPath: string;
@@ -91,6 +93,10 @@ export interface Settings {
   /** Cycle the home greeting's action word with the typewriter animation;
    *  when false the greeting shows a static "ffmpeg". */
   animateGreeting: boolean;
+  /** Color theme: follow the OS, or force light/dark. Defaults to dark. */
+  theme: Theme;
+  /** UI language: follow the OS, or force English/French. Defaults to system. */
+  language: LanguagePref;
 }
 
 export interface JobProgressEvent {

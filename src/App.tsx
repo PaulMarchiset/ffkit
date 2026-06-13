@@ -12,6 +12,7 @@ import { filesService } from "@/lib/services/filesService";
 import { JobsProvider, useJobsList } from "@/lib/jobsContext";
 import { useAppBootstrap } from "@/lib/useAppBootstrap";
 import { SettingsProvider } from "@/lib/settingsContext";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import type { JobInputMeta } from "@/lib/types";
 
@@ -30,6 +31,7 @@ function AppShell() {
   const [resetNonce, setResetNonce] = useState(0);
   const { encoders, encoderLoading } = useAppBootstrap();
   const { jobs: allJobs, dismiss: dismissJob } = useJobsList();
+  const { t } = useTranslation();
 
   // Open the progress view for a job — whether it was just started (SimpleMode,
   // which forwards input metadata for the result card) or picked from the dock
@@ -39,9 +41,11 @@ function AppShell() {
     setShowProgress(true);
   }
 
-  // "Convert another" on a finished job: return to the converter and clear the
-  // media so it's ready for a new file (settings are preserved).
-  function handleConvertAnother() {
+  // Return to the converter with a fresh drop zone — clears the selected media
+  // (quality/advanced settings are preserved). Shared by "Run in background"
+  // (job keeps running, tracked in the dock) and "Convert another" (finished
+  // job), so leaving the progress view always frees the drop space for a new file.
+  function returnToConverter() {
     setShowProgress(false);
     setResetNonce((n) => n + 1);
   }
@@ -57,13 +61,13 @@ function AppShell() {
   const showMain = !(showProgress && activeJob) && !isSettings;
 
   return (
-    <div className="dark h-screen bg-bg text-fg flex flex-col">
+    <div className="h-screen bg-bg text-fg flex flex-col">
       <header
         data-tauri-drag-region
         className="flex items-center h-16 pl-7 flex-shrink-0 select-none"
       >
         <div data-tauri-drag-region className="flex items-center gap-3">
-          <span data-tauri-drag-region className="pointer-events-none">
+          <span data-tauri-drag-region className="pointer-events-none text-fg">
             <FFKitLogo />
           </span>
           <EncoderBadge loading={encoderLoading} encoders={encoders} />
@@ -82,7 +86,7 @@ function AppShell() {
             )}
           >
             <SettingsIcon className="w-4 h-4" />
-            Settings
+            {t("common.settings")}
           </button>
 
           <button
@@ -90,7 +94,7 @@ function AppShell() {
             className="flex items-center gap-2 px-4 py-2 rounded-md border border-border-strong text-sm text-fg hover:bg-white/5 transition-colors"
           >
             <BookIcon />
-            Documentation
+            {t("common.documentation")}
           </button>
         </div>
 
@@ -105,16 +109,19 @@ function AppShell() {
           <div className={cn(showMain ? undefined : "hidden")}>
             <SimpleMode onJobStart={showJobProgress} resetNonce={resetNonce} />
           </div>
-          {showProgress && activeJob ? (
+          {/* Settings takes precedence over the progress view so it can be
+              opened from any screen; closing it (view → "main") falls back to
+              the still-active JobProgress when a job is in progress/finished. */}
+          {view === "settings" ? (
+            <SettingsPanel onBack={() => setView("main")} />
+          ) : showProgress && activeJob ? (
             <JobProgress
               jobId={activeJob.id}
               outputPath={activeJob.outputPath}
               inputMeta={activeJob.input}
-              onBack={() => setShowProgress(false)}
-              onConvertAnother={handleConvertAnother}
+              onBack={returnToConverter}
+              onConvertAnother={returnToConverter}
             />
-          ) : view === "settings" ? (
-            <SettingsPanel onBack={() => setView("main")} />
           ) : null}
         </div>
       </main>

@@ -42,7 +42,7 @@ export function Select({ value, onChange, options }: Props) {
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 pl-3 pr-2.5 py-2 text-sm rounded-lg border border-border-soft text-fg hover:bg-white/5 focus:border-accent/50 outline-none transition-colors cursor-pointer"
+        className="flex items-center gap-2 pl-3 pr-2.5 py-2 text-sm rounded-lg border border-border-soft text-fg hover:bg-elevate-2 focus:border-accent/50 outline-none transition-colors cursor-pointer"
       >
         <span className="truncate">{selected?.label ?? ""}</span>
         <ChevronDown
@@ -73,8 +73,8 @@ export function Select({ value, onChange, options }: Props) {
                 className={cn(
                   "flex w-full items-center justify-between gap-3 px-3 py-1.5 rounded-md text-sm whitespace-nowrap transition-colors",
                   isSelected
-                    ? "bg-white/10 text-fg"
-                    : "text-subtle hover:bg-white/5 hover:text-fg",
+                    ? "bg-elevate-4 text-fg"
+                    : "text-subtle hover:bg-elevate-2 hover:text-fg",
                 )}
               >
                 {o.label}

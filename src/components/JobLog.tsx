@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function JobLog({ lines }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -22,7 +24,7 @@ export function JobLog({ lines }: Props) {
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-muted hover:text-fg transition-colors"
       >
-        <span>ffmpeg log</span>
+        <span>{t("job.log")}</span>
         {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
       </button>
       {open && (
@@ -38,7 +40,7 @@ export function JobLog({ lines }: Props) {
             </div>
           </ScrollArea.Viewport>
           <ScrollArea.Scrollbar orientation="vertical" className="w-1.5 p-0.5">
-            <ScrollArea.Thumb className="bg-white/20 rounded-full" />
+            <ScrollArea.Thumb className="bg-elevate-6 rounded-full" />
           </ScrollArea.Scrollbar>
         </ScrollArea.Root>
       )}

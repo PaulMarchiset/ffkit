@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import type { PromptField } from "@/lib/ffmpeg-args";
 
@@ -12,9 +13,10 @@ interface Props {
  * a row of quick-pick preset chips. Used for the Framerate / GIF controls.
  */
 export function NumberPresetField({ field, value, onChange }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm text-muted">{field.label}</label>
+      <label className="text-sm text-muted">{t(`field.${field.key}`, field.label)}</label>
       <div className="relative">
         <input
           type="text"

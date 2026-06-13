@@ -28,6 +28,8 @@ const DEFAULT_INVOKE_RESPONSES: Record<string, InvokeResponder> = {
     notifyOnDone: true,
     openFolderOnDone: false,
     animateGreeting: true,
+    theme: "dark",
+    language: "system",
   }),
   detect_encoders: () => ({
     available: [],

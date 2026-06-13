@@ -1,4 +1,5 @@
 import { Zap } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { UploadIcon } from "./icons/UploadIcon";
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function FileDropZone({ onClick, dragging, loading, error }: Props) {
+  const { t } = useTranslation();
   return (
     <div
       className={cn(
@@ -23,10 +25,10 @@ export function FileDropZone({ onClick, dragging, loading, error }: Props) {
       <UploadIcon />
 
       {loading ? (
-        <p className="text-muted text-sm">Reading file…</p>
+        <p className="text-muted text-sm">{t("dropzone.reading")}</p>
       ) : (
         <p className={cn("text-sm transition-colors", dragging ? "text-fg" : "text-muted")}>
-          {dragging ? "Drop your video" : "Drop your video here"}
+          {dragging ? t("dropzone.active") : t("dropzone.idle")}
         </p>
       )}
 

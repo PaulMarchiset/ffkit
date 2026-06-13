@@ -9,7 +9,12 @@ import {
   type ReactNode,
 } from "react";
 import { jobsService } from "@/lib/services/jobsService";
+import { filesService } from "@/lib/services/filesService";
+import { notificationsService } from "@/lib/services/notificationsService";
+import { useSettings } from "@/lib/settingsContext";
 import { useTauriListener } from "@/lib/useTauriListener";
+import i18n from "@/lib/i18n";
+import { basename, parentDir } from "@/lib/path";
 import type {
   JobProgressEvent,
   JobDoneEvent,
@@ -101,6 +106,11 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   const clearTimers = useRef<Record<string, number>>({});
   const jobsRef = useRef(jobs);
   jobsRef.current = jobs;
+
+  // Read settings inside the (stable) job-done listener without re-subscribing.
+  const { settings } = useSettings();
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
   const refresh = useCallback(async () => {
     try {
@@ -226,6 +236,18 @@ export function JobsProvider({ children }: { children: ReactNode }) {
           },
         };
       });
+      if (e.success) {
+        const s = settingsRef.current;
+        if (s?.notifyOnDone) {
+          notificationsService.notify(
+            "FFkit",
+            i18n.t("job.notifyBody", { name: basename(e.outputPath) }),
+          );
+        }
+        if (s?.openFolderOnDone) {
+          filesService.openPath(parentDir(e.outputPath)).catch(() => {});
+        }
+      }
       if (e.success || e.cancelled) scheduleClear(e.jobId);
     },
   );

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { FilePicker } from "./FilePicker";
 import { QualityButtons } from "./QualityButtons";
 import { AdvancedMode } from "./AdvancedMode";
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function SimpleMode({ onJobStart, resetNonce }: Props) {
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const [file, setFile] = useState<FileInfo | null>(null);
   const [quality, setQuality] = useState<Quality>(
@@ -95,7 +97,7 @@ export function SimpleMode({ onJobStart, resetNonce }: Props) {
               onClick={() => setShowAdvanced((v) => !v)}
               className="flex items-center gap-1 px-4 py-2 text-sm text-muted hover:text-fg transition-colors"
             >
-              Advanced
+              {t("common.advanced")}
               {showAdvanced ? (
                 <ChevronUp className="w-3.5 h-3.5" />
               ) : (

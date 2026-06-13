@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { jobsService } from "@/lib/services/jobsService";
 import { formatEta } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -28,6 +29,7 @@ function rightLabelTextColor(state: DockJob["state"]): string {
 }
 
 export function JobRow({ job, onDismiss, onSelect }: Props) {
+  const { t } = useTranslation();
   const terminal = isTerminalState(job.state);
   const name = basename(job.inputPath);
 
@@ -44,7 +46,9 @@ export function JobRow({ job, onDismiss, onSelect }: Props) {
     if (onSelect && !terminal) onSelect(job.id, job.outputPath);
   }
 
-  const rightLabel = terminal ? job.state : `${job.progress.toFixed(0)}%`;
+  const rightLabel = terminal
+    ? t(`job.state.${job.state}`)
+    : `${job.progress.toFixed(0)}%`;
 
   return (
     <div
@@ -52,11 +56,11 @@ export function JobRow({ job, onDismiss, onSelect }: Props) {
       title={job.error ?? name}
       className={cn(
         "px-2 py-1.5 rounded-md flex items-center gap-3 transition-colors",
-        !terminal && onSelect && "cursor-pointer hover:bg-white/5",
+        !terminal && onSelect && "cursor-pointer hover:bg-elevate-2",
       )}
     >
       <span className="flex-1 min-w-0 truncate text-sm text-fg">{name}</span>
-      <div className="w-32 h-1.5 rounded-full bg-white/5 overflow-hidden">
+      <div className="w-32 h-1.5 rounded-full bg-elevate-2 overflow-hidden">
         <div
           className={cn("h-full transition-all", progressBarColor(job.state))}
           style={{ width: `${Math.min(100, Math.max(0, job.progress))}%` }}
@@ -75,8 +79,8 @@ export function JobRow({ job, onDismiss, onSelect }: Props) {
       </span>
       <button
         onClick={handleClose}
-        className="p-1 rounded text-muted hover:text-fg hover:bg-white/5 transition-colors"
-        title={terminal ? "Dismiss" : "Cancel"}
+        className="p-1 rounded text-muted hover:text-fg hover:bg-elevate-2 transition-colors"
+        title={terminal ? t("common.dismiss") : t("common.cancel")}
       >
         <X className="w-3.5 h-3.5" />
       </button>

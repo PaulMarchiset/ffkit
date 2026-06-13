@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { QUALITY_PRESETS, type QualityPreset } from "@/lib/presets";
 import type { Quality } from "@/lib/types";
@@ -36,10 +37,11 @@ interface PillProps {
 }
 
 function QualityPill({ preset, selected, onSelect }: PillProps) {
+  const { t } = useTranslation();
   return (
     <button
       onClick={onSelect}
-      title={preset.tooltip}
+      title={t(`quality.${preset.id}.tooltip`)}
       className={cn(
         "flex items-center gap-2 px-4 py-2 rounded-[10px] border text-sm transition-all",
         selected
@@ -55,7 +57,7 @@ function QualityPill({ preset, selected, onSelect }: PillProps) {
       >
         {PRESET_ICONS[preset.id]}
       </span>
-      {preset.label}
+      {t(`quality.${preset.id}.label`)}
     </button>
   );
 }

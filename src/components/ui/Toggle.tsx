@@ -10,7 +10,7 @@ export function Toggle({ value, onChange }: Props) {
       aria-checked={value}
       onClick={() => onChange(!value)}
       className={`relative inline-flex h-6 w-11 rounded-full transition-colors ${
-        value ? "bg-accent" : "bg-white/20"
+        value ? "bg-accent" : "bg-elevate-6"
       }`}
     >
       <span

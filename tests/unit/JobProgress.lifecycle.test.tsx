@@ -3,6 +3,7 @@ import { render, screen, act } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { JobProgress } from "@/components/JobProgress";
 import { JobsProvider } from "@/lib/jobsContext";
+import { SettingsProvider } from "@/lib/settingsContext";
 import { __tauriMock } from "@/test/mocks/tauri";
 
 function flush() {
@@ -13,7 +14,12 @@ function flush() {
 }
 
 function withProvider(node: ReactNode) {
-  return <JobsProvider>{node}</JobsProvider>;
+  // Mirror the app nesting: JobsProvider now reads settings (for notifyOnDone).
+  return (
+    <SettingsProvider>
+      <JobsProvider>{node}</JobsProvider>
+    </SettingsProvider>
+  );
 }
 
 // A list_jobs() row so the provider seeds a job the progress view can read.

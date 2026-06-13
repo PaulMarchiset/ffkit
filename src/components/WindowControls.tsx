@@ -12,7 +12,7 @@ export function WindowControls() {
         type="button"
         aria-label="Minimize"
         onClick={() => windowService.minimize()}
-        className="w-[46px] flex items-center justify-center text-fg/80 hover:bg-white/[0.08] transition-colors"
+        className="w-[46px] flex items-center justify-center text-fg/80 hover:bg-elevate-3 transition-colors"
       >
         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
           <line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" strokeWidth="1" />
@@ -23,7 +23,7 @@ export function WindowControls() {
         type="button"
         aria-label="Maximize"
         onClick={() => windowService.toggleMaximize()}
-        className="w-[46px] flex items-center justify-center text-fg/80 hover:bg-white/[0.08] transition-colors"
+        className="w-[46px] flex items-center justify-center text-fg/80 hover:bg-elevate-3 transition-colors"
       >
         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
           <rect x="0.5" y="0.5" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="1" />

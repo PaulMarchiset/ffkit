@@ -1,4 +1,5 @@
 import { FolderOpen, Loader2, Zap } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { formatBytes, formatDuration } from "@/lib/format";
 import type { FileInfo } from "@/lib/types";
@@ -22,6 +23,7 @@ export function FileCard({
   outputPath,
   onChangeOutput,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <div
       className="relative w-full rounded-2xl bg-surface overflow-hidden cursor-pointer group transition-all"
@@ -57,7 +59,7 @@ export function FileCard({
               "bg-accent hover:bg-accent/85",
               "disabled:opacity-50 disabled:cursor-not-allowed",
             )}
-            title="Convert"
+            title={t("fileCard.convert")}
           >
             {converting ? (
               <Loader2 className="w-4 h-4 text-white animate-spin" />
@@ -68,7 +70,7 @@ export function FileCard({
         )}
 
         <span className="absolute top-3 right-3 text-xs text-muted group-hover:text-subtle transition-colors">
-          Click to change
+          {t("fileCard.clickToChange")}
         </span>
       </div>
 

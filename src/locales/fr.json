@@ -1,0 +1,181 @@
+{
+  "common": {
+    "documentation": "Documentation",
+    "settings": "Paramètres",
+    "back": "Retour",
+    "cancel": "Annuler",
+    "advanced": "Avancé",
+    "dismiss": "Ignorer",
+    "loading": "Chargement…"
+  },
+  "hero": {
+    "greetingPrefix": "Salut, prêt à ",
+    "greetingSuffix": " ?",
+    "verbs": ["compresser", "éditer", "convertir", "redimensionner", "baguette", "transcoder", "ffmpeg"]
+  },
+  "dropzone": {
+    "idle": "Déposez votre vidéo ici",
+    "active": "Déposez votre vidéo",
+    "reading": "Lecture du fichier…"
+  },
+  "fileCard": {
+    "clickToChange": "Cliquer pour changer",
+    "convert": "Convertir"
+  },
+  "quality": {
+    "low": {
+      "label": "Faible",
+      "tooltip": "CRF 30 — idéal pour le partage ou le streaming quand la taille du fichier compte."
+    },
+    "medium": {
+      "label": "Moyen",
+      "tooltip": "CRF 23 — la valeur par défaut de ffmpeg. Excellent choix polyvalent."
+    },
+    "lossless": {
+      "label": "Sans perte",
+      "tooltip": "CRF 18 — H.264 visuellement sans perte. Fichier plus volumineux. Pour un vrai sans perte mathématique, utilisez le mode Avancé."
+    }
+  },
+  "category": {
+    "Compress": "Compresser",
+    "Convert": "Convertir",
+    "Resize": "Redimensionner",
+    "Extract": "Extraire",
+    "Edit": "Éditer"
+  },
+  "feature": {
+    "compress-h264": "H.264",
+    "compress-h265": "H.265",
+    "to-mp4": "vers MP4",
+    "to-webm": "vers WebM (VP9)",
+    "to-mov": "vers MOV",
+    "resize-1080p": "1080p",
+    "resize-720p": "720p",
+    "resize-480p": "480p",
+    "audio-mp3": "Audio MP3",
+    "audio-wav": "Audio WAV",
+    "strip-audio": "Retirer l'audio",
+    "strip-video": "Retirer la vidéo",
+    "trim": "Couper",
+    "framerate": "FPS",
+    "gif": "GIF"
+  },
+  "field": {
+    "fps": "Images par seconde",
+    "width": "Largeur",
+    "start": "Début",
+    "end": "Fin"
+  },
+  "command": {
+    "label": "commande ffmpeg",
+    "reset": "Réinitialiser",
+    "helpBefore": "Utilisez",
+    "helpMid": "et",
+    "helpAfter": "comme variables du chemin."
+  },
+  "trim": {
+    "selection": "Sélection",
+    "readingAudio": "Lecture de l'audio…"
+  },
+  "job": {
+    "done": "Terminé.",
+    "cancelled": "Annulé.",
+    "failed": "Échec.",
+    "speed": "Vitesse",
+    "written": "Écriture",
+    "realtime": "Temps réel",
+    "size": "Taille",
+    "time": "Durée",
+    "saved": "Économisé",
+    "runInBackground": "Exécuter en arrière-plan",
+    "convertAnother": "Convertir un autre",
+    "log": "Journal ffmpeg",
+    "notifyBody": "{{name}} est prêt !",
+    "state": { "done": "Terminé", "cancelled": "Annulé", "failed": "Échec" }
+  },
+  "dock": {
+    "title": "Tâches",
+    "running": "{{count}} en cours",
+    "jobs_one": "{{count}} tâche",
+    "jobs_other": "{{count}} tâches"
+  },
+  "confirm": {
+    "title": "Remplacer votre commande modifiée ?",
+    "replace": "Remplacer",
+    "keepMine": "Garder la mienne"
+  },
+  "settings": {
+    "sections": {
+      "output": "Sortie",
+      "defaults": "Valeurs par défaut",
+      "interface": "Interface",
+      "jobs": "Tâches",
+      "updates": "Mises à jour"
+    },
+    "outputFolder": {
+      "label": "Dossier de sortie par défaut",
+      "description": "Où les fichiers convertis sont enregistrés",
+      "sameAsInput": "Identique à l'entrée",
+      "clear": "Effacer"
+    },
+    "naming": {
+      "title": "Modèle de nom de sortie",
+      "description": "Comment les fichiers exportés sont nommés",
+      "helpBefore": "Utilisez",
+      "helpAfter": "comme variables."
+    },
+    "defaultQuality": {
+      "label": "Qualité par défaut",
+      "description": "Préréglage sélectionné au lancement"
+    },
+    "hardwareAccel": {
+      "label": "Accélération matérielle",
+      "description": "Utiliser le GPU si disponible",
+      "auto": "Auto (recommandé)",
+      "software": "Forcer le logiciel (libx264)"
+    },
+    "theme": {
+      "label": "Thème",
+      "description": "Système suit l'apparence de votre OS",
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre"
+    },
+    "language": {
+      "label": "Langue",
+      "description": "Langue utilisée dans l'application",
+      "system": "Système"
+    },
+    "animateGreeting": {
+      "label": "Animer le message d'accueil",
+      "description": "Fait défiler le mot d'action ; désactivé affiche seulement « ffmpeg »"
+    },
+    "concurrentJobs": {
+      "label": "Tâches simultanées max",
+      "description": "Fichiers traités en même temps"
+    },
+    "notify": {
+      "label": "Notifier à la fin",
+      "description": "Envoyer une notification système à la fin"
+    },
+    "openFolder": {
+      "label": "Ouvrir le dossier à la fin",
+      "description": "Afficher automatiquement le dossier de sortie"
+    },
+    "updateChannel": {
+      "label": "Canal de mise à jour",
+      "description": "Stable est recommandé pour la plupart des utilisateurs",
+      "stable": "Stable",
+      "beta": "Bêta"
+    },
+    "updates": {
+      "label": "Mises à jour de l'application",
+      "checking": "vérification…",
+      "uptodate": "à jour",
+      "available": "v{{version}} disponible",
+      "installing": "installation… {{percent}} %",
+      "checkButton": "Vérifier les mises à jour",
+      "checkingButton": "Vérification…"
+    }
+  }
+}

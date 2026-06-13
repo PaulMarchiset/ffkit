@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, .light *));
 
 @theme {
   --color-accent: #518B2E;
@@ -23,8 +24,63 @@
   --color-border-strong: rgb(255 255 255 / 15%);
   --color-border-hover:  rgb(255 255 255 / 20%);
 
+  /* Theme-aware elevation/selection overlays. Dark theme tints with white;
+     the light theme (below) flips these to black so the same `bg-elevate-N`
+     utilities read correctly on a light background. */
+  --color-elevate-1: rgb(255 255 255 / 3%);
+  --color-elevate-2: rgb(255 255 255 / 5%);
+  --color-elevate-3: rgb(255 255 255 / 8%);
+  --color-elevate-4: rgb(255 255 255 / 10%);
+  --color-elevate-5: rgb(255 255 255 / 15%);
+  --color-elevate-6: rgb(255 255 255 / 20%);
+
+  /* The ffmpeg command "terminal" stays dark in every theme (see mockup), so
+     it has its own fixed tokens that the light theme does NOT override. */
+  --color-term-bg: #0e0e0c;
+  --color-term-fg: #c0bfb5;
+
   --font-serif: "Sirba", Georgia, "Times New Roman", serif;
   --font-sans: "PP Mori", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Light theme — applied when `.light` is on <html> (see settingsContext). The
+   @theme values above are the dark defaults; this block overrides the same
+   variables with the light palette, so every `bg-bg` / `text-fg` / `bg-elevate-N`
+   utility follows the theme with no markup changes. `--color-accent` and the
+   `--color-term-*` tokens are intentionally left as-is. The `:root.light`
+   selector outranks @theme's `:root` so these win when active. */
+:root.light {
+  --color-accent: #518b2e;
+  --color-surface: #faf9f6;
+  --color-surface-2: #e9e8e3;
+  --color-muted: #76756d;
+  --color-subtle: #4f4e47;
+
+  --color-bg: #f1f0ec;
+  --color-fg: #232320;
+
+  --color-border-subtle: rgb(0 0 0 / 5%);
+  --color-border-soft:   rgb(0 0 0 / 7%);
+  --color-border:        rgb(0 0 0 / 10%);
+  --color-border-strong: rgb(0 0 0 / 13%);
+  --color-border-hover:  rgb(0 0 0 / 20%);
+
+  --color-elevate-1: rgb(0 0 0 / 3%);
+  --color-elevate-2: rgb(0 0 0 / 5%);
+  --color-elevate-3: rgb(0 0 0 / 7%);
+  --color-elevate-4: rgb(0 0 0 / 9%);
+  --color-elevate-5: rgb(0 0 0 / 12%);
+  --color-elevate-6: rgb(0 0 0 / 16%);
+
+  color-scheme: light;
+}
+
+/* Smooth the light<->dark flip. Added to <html> only for ~250ms during a theme
+   switch (see settingsContext), so normal hovers/state changes stay instant. */
+.theme-transition,
+.theme-transition * {
+  transition: background-color 350ms linear, color 350ms linear,
+    border-color 350ms linear;
 }
 
 /* Bundled fonts live in public/assets/fonts/ — they ship inside the Tauri build.

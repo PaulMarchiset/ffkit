@@ -3,8 +3,8 @@ import { ArrowLeft, FolderOpen, Minus, Monitor, Moon, Plus, RefreshCw, Sun } fro
 import { useTranslation } from "react-i18next";
 import { pickOutputFolder } from "@/lib/dialogs";
 import { systemService } from "@/lib/services/systemService";
-import { updaterService } from "@/lib/services/updaterService";
 import { useSettings } from "@/lib/settingsContext";
+import { useUpdater } from "@/lib/updaterContext";
 import type {
   Settings,
   Quality,
@@ -50,15 +50,9 @@ export function SettingsPanel({ onBack }: Props) {
   // whenever it diverges from the canonical settings — there is no Save button.
   const [settings, setLocal] = useState<Settings | null>(persisted);
   const [appVersion, setAppVersion] = useState("");
-
-  type UpdateState =
-    | { kind: "idle" }
-    | { kind: "checking" }
-    | { kind: "uptodate" }
-    | { kind: "available"; version: string }
-    | { kind: "installing"; progress: number }
-    | { kind: "error"; message: string };
-  const [updateState, setUpdateState] = useState<UpdateState>({ kind: "idle" });
+  // Update state is shared with the startup check / banner so a check or install
+  // started in either place is reflected in both.
+  const { state: updateState, check, install } = useUpdater();
 
   useEffect(() => {
     setLocal(persisted);
@@ -84,23 +78,11 @@ export function SettingsPanel({ onBack }: Props) {
     setLocal((prev) => (prev ? { ...prev, [key]: value } : prev));
   }
 
-  async function handleCheckUpdates() {
-    setUpdateState({ kind: "checking" });
-    try {
-      const update = await updaterService.check();
-      if (!update) {
-        setUpdateState({ kind: "uptodate" });
-        return;
-      }
-      setUpdateState({ kind: "available", version: update.version });
-      setUpdateState({ kind: "installing", progress: 0 });
-      await updaterService.install(update, (fraction) =>
-        setUpdateState({ kind: "installing", progress: fraction }),
-      );
-      // App relaunches on success; this line is effectively unreachable.
-    } catch (err) {
-      setUpdateState({ kind: "error", message: String(err) });
-    }
+  // When an update is already pending, the button installs it; otherwise it
+  // runs a fresh (non-silent, so errors surface here) check.
+  function handleUpdateButton() {
+    if (updateState.kind === "available") install();
+    else check();
   }
 
   async function handlePickFolder() {
@@ -359,13 +341,15 @@ export function SettingsPanel({ onBack }: Props) {
           </Row>
           <Row label={t("settings.updates.label")} description={updateStatus}>
             <button
-              onClick={handleCheckUpdates}
+              onClick={handleUpdateButton}
               disabled={updateBusy}
               className="flex items-center gap-4 px-3 py-2 text-sm rounded-lg border border-border-soft  text-fg hover:bg-elevate-2 disabled:opacity-50 transition-colors"
             >
               {updateState.kind === "checking"
                 ? t("settings.updates.checkingButton")
-                : t("settings.updates.checkButton")}
+                : updateState.kind === "available"
+                  ? t("update.install")
+                  : t("settings.updates.checkButton")}
               <RefreshCw className="w-4 h-4 text-muted" />
             </button>
           </Row>

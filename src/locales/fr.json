@@ -8,6 +8,35 @@
     "dismiss": "Ignorer",
     "loading": "Chargement…"
   },
+  "update": {
+    "title": "Mise à jour disponible",
+    "install": "Installer maintenant",
+    "later": "Plus tard"
+  },
+  "estimate": {
+    "label": "Taille estimée",
+    "refining": "estimation…",
+    "smaller": "{{percent}} % plus petit",
+    "larger": "{{percent}} % plus gros"
+  },
+  "mediaInfo": {
+    "title": "Infos média",
+    "general": "Général",
+    "video": "Vidéo",
+    "audio": "Audio",
+    "name": "Nom",
+    "container": "Conteneur",
+    "size": "Taille",
+    "duration": "Durée",
+    "bitrate": "Débit",
+    "codec": "Codec",
+    "profile": "Profil",
+    "resolution": "Résolution",
+    "fps": "Images/s",
+    "pixFmt": "Format de pixel",
+    "channels": "Canaux",
+    "sampleRate": "Échantillonnage"
+  },
   "hero": {
     "greetingPrefix": "Salut, prêt à ",
     "greetingSuffix": " ?",
@@ -21,6 +50,31 @@
   "fileCard": {
     "clickToChange": "Cliquer pour changer",
     "convert": "Convertir"
+  },
+  "batch": {
+    "fileCount_one": "{{count}} fichier",
+    "fileCount_other": "{{count}} fichiers",
+    "mixedFormat": "formats mixtes",
+    "addFiles": "Ajouter des fichiers",
+    "addClips": "Ajouter des clips",
+    "removeAll": "Tout supprimer",
+    "convertAll": "Tout convertir",
+    "selectedCount": "{{count}} sélectionné(s)",
+    "apply": "Appliquer :",
+    "default": "Défaut",
+    "clear": "Effacer",
+    "changeFolder": "Changer le dossier de sortie",
+    "removeFile": "Retirer de la liste",
+    "cancelAll": "Tout annuler",
+    "advancedSingleFile": "Le mode avancé traite un seul fichier — utilisation de {{name}}.",
+    "progress": {
+      "running": "Conversion — {{done}}/{{total}} terminés",
+      "done": "{{done}} sur {{total}} terminés"
+    },
+    "status": {
+      "queued": "En attente",
+      "cancelled": "Annulé"
+    }
   },
   "quality": {
     "low": {

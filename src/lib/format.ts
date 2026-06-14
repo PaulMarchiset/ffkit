@@ -6,6 +6,13 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
+/** Bits-per-second → "1.2 Mbps" / "320 kbps". */
+export function formatBitrate(bitsPerSec: number): string {
+  if (!isFinite(bitsPerSec) || bitsPerSec <= 0) return "—";
+  if (bitsPerSec >= 1_000_000) return `${(bitsPerSec / 1_000_000).toFixed(1)} Mbps`;
+  return `${Math.round(bitsPerSec / 1000)} kbps`;
+}
+
 export function formatDuration(secs: number): string {
   const h = Math.floor(secs / 3600);
   const m = Math.floor((secs % 3600) / 60);

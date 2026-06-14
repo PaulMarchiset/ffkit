@@ -9,6 +9,14 @@ export interface FileInfo {
   audioCodec?: string;
   bitrate?: number;
   container?: string;
+  // Richer detail for the media-info modal; `fps` also feeds the size estimate.
+  fps?: number;
+  pixFmt?: string;
+  videoBitrate?: number;
+  videoProfile?: string;
+  audioChannels?: number;
+  audioSampleRate?: number;
+  audioBitrate?: number;
 }
 
 export type Quality = "low" | "medium" | "lossless";
@@ -38,6 +46,18 @@ export interface JobSpec {
 export interface JobInputMeta {
   size?: number;
   durationMs?: number;
+}
+
+/**
+ * One file queued in a batch conversion: the started job's id paired with the
+ * source file, the quality it's being encoded at, and its destination. Drives
+ * the batch progress screen (which overlays live status from the jobs store).
+ */
+export interface BatchItem {
+  jobId: string;
+  file: FileInfo;
+  quality: Quality;
+  outputPath: string;
 }
 
 export interface JobStatus {

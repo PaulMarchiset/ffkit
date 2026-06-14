@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex as StdMutex};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Notify};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
@@ -80,7 +80,7 @@ impl Default for Settings {
             default_quality: "medium".to_string(),
             hardware_accel: "auto".to_string(),
             update_channel: "stable".to_string(),
-            concurrent_jobs: 1,
+            concurrent_jobs: 2,
             notify_on_done: true,
             open_folder_on_done: false,
             animate_greeting: true,
@@ -94,11 +94,16 @@ pub type JobsMap = Arc<Mutex<HashMap<String, JobEntry>>>;
 
 /// Admission control for concurrent ffmpeg jobs.
 ///
-/// Owns the running-job count + configured limit as a single critical section
-/// so the check-and-reserve is atomic. Uses `std::sync::Mutex` (not tokio's) so
-/// `JobSlot::drop` can release the slot without an async context.
+/// Owns the running-job count + configured limit as a single critical section.
+/// Acquisition is async and *queues*: a job past the limit awaits here (sitting
+/// in `JobState::Queued`) until a slot frees, rather than being rejected. Uses
+/// `std::sync::Mutex` (not tokio's) so `JobSlot::drop` can release the slot
+/// without an async context; a `Notify` wakes queued acquirers.
 pub struct JobScheduler {
     inner: StdMutex<SchedulerState>,
+    /// Pulsed whenever a slot frees or the limit grows, so queued `acquire`
+    /// futures re-check the condition.
+    available: Notify,
 }
 
 struct SchedulerState {
@@ -110,34 +115,55 @@ impl JobScheduler {
     pub fn new(limit: usize) -> Self {
         JobScheduler {
             inner: StdMutex::new(SchedulerState { running: 0, limit }),
+            available: Notify::new(),
         }
     }
 
-    /// Atomically reserve a slot if one is available. On `Err`, returns the
-    /// current limit so the caller can build a user-facing message.
-    pub fn try_reserve(self: &Arc<Self>) -> Result<JobSlot, usize> {
-        let mut s = self.inner.lock().unwrap();
-        if s.running >= s.limit {
-            return Err(s.limit);
+    /// Await an admission slot, queuing until `running < limit`. The returned
+    /// `JobSlot` releases the slot when dropped (after the job's reader returns).
+    ///
+    /// Lost-wakeup-safe: the `Notified` future is registered (`enable`) *before*
+    /// each condition check, so a slot freed between check and await still wakes
+    /// us. `notify_waiters` (used by the producers) only wakes already-registered
+    /// waiters, which is exactly why the pre-registration matters.
+    pub async fn acquire(self: &Arc<Self>) -> JobSlot {
+        let notified = self.available.notified();
+        tokio::pin!(notified);
+        loop {
+            notified.as_mut().enable();
+            {
+                let mut s = self.inner.lock().unwrap();
+                if s.running < s.limit {
+                    s.running += 1;
+                    return JobSlot { scheduler: self.clone() };
+                }
+            }
+            notified.as_mut().await;
+            notified.set(self.available.notified());
         }
-        s.running += 1;
-        Ok(JobSlot { scheduler: self.clone() })
     }
 
+    /// Update the live concurrency limit (settings change). Waking waiters lets
+    /// newly-permitted jobs start when the limit grows; a shrink simply means
+    /// already-running jobs finish before the surplus queue drains.
     pub fn set_limit(&self, n: usize) {
         self.inner.lock().unwrap().limit = n;
+        self.available.notify_waiters();
     }
 }
 
-/// RAII permit. Dropping releases the reserved slot.
+/// RAII permit. Dropping releases the reserved slot and wakes a queued acquirer.
 pub struct JobSlot {
     scheduler: Arc<JobScheduler>,
 }
 
 impl Drop for JobSlot {
     fn drop(&mut self) {
-        let mut s = self.scheduler.inner.lock().unwrap();
-        s.running = s.running.saturating_sub(1);
+        {
+            let mut s = self.scheduler.inner.lock().unwrap();
+            s.running = s.running.saturating_sub(1);
+        }
+        self.scheduler.available.notify_waiters();
     }
 }
 

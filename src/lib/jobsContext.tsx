@@ -290,6 +290,28 @@ export function useJobsList(): { jobs: DockJob[]; dismiss: (id: string) => void 
 }
 
 /**
+ * Derived selector: the live job + done event for each id in a batch. Reads
+ * straight from the shared store (which already tracks every job by id), so the
+ * batch progress screen needs no subscription of its own. Pass a memoized `ids`
+ * array to keep the result referentially stable between renders.
+ */
+export function useJobsByIds(ids: string[]): {
+  jobs: Record<string, DockJob>;
+  done: Record<string, JobDoneEvent>;
+} {
+  const { jobsById, doneById } = useJobs();
+  return useMemo(() => {
+    const jobs: Record<string, DockJob> = {};
+    const done: Record<string, JobDoneEvent> = {};
+    for (const id of ids) {
+      if (jobsById[id]) jobs[id] = jobsById[id];
+      if (doneById[id]) done[id] = doneById[id];
+    }
+    return { jobs, done };
+  }, [ids, jobsById, doneById]);
+}
+
+/**
  * Derived selector: the live progress, done event, and log lines for a single
  * job. Reads straight from the shared store — no per-component subscription.
  */

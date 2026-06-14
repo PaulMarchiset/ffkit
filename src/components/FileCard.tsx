@@ -1,9 +1,12 @@
-import { FolderOpen, Loader2, Zap } from "lucide-react";
+import { useState } from "react";
+import { FolderOpen, Info, Loader2, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { formatBytes, formatDuration } from "@/lib/format";
-import type { FileInfo } from "@/lib/types";
+import type { FileInfo, Quality } from "@/lib/types";
 import { UploadIcon } from "./icons/UploadIcon";
+import { MediaInfoModal } from "./MediaInfoModal";
+import { SizeEstimateLine } from "./SizeEstimateLine";
 
 interface Props {
   file: FileInfo;
@@ -13,6 +16,8 @@ interface Props {
   /** When set, the derived output path is shown below the file info. */
   outputPath?: string;
   onChangeOutput?: () => void;
+  /** When set, an output-size estimate for this quality is shown. */
+  quality?: Quality;
 }
 
 export function FileCard({
@@ -22,8 +27,10 @@ export function FileCard({
   converting,
   outputPath,
   onChangeOutput,
+  quality,
 }: Props) {
   const { t } = useTranslation();
+  const [showInfo, setShowInfo] = useState(false);
   return (
     <div
       className="relative w-full rounded-2xl bg-surface overflow-hidden cursor-pointer group transition-all"
@@ -31,19 +38,41 @@ export function FileCard({
     >
       {/* Top: file info — unchanged layout (relative so the convert button and
           "Click to change" anchor to this section, not the whole card). */}
-      <div className="relative px-5 py-7">
+      <div className="relative px-5 pt-7 pb-4">
         <div className="flex items-center gap-4 pr-14">
           <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center">
             <UploadIcon size={18} stroke="#5F8D42" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-medium text-fg truncate text-sm">{file.name}</p>
-            <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
-              <span>{formatBytes(file.size)}</span>
-              {file.duration != null && <span>{formatDuration(file.duration)}</span>}
-              {file.width && file.height && <span>{file.width}×{file.height}</span>}
-              {file.videoCodec && <span>{file.videoCodec.toUpperCase()}</span>}
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted leading-none">
+              {[
+                formatBytes(file.size),
+                file.duration != null ? formatDuration(file.duration) : null,
+                file.width && file.height ? `${file.width}×${file.height}` : null,
+                file.videoCodec ? file.videoCodec.toUpperCase() : null,
+              ]
+                .filter((item): item is string => item != null)
+                .map((item, i) => (
+                  <span key={i} className="flex items-center gap-1.5">
+                    {i > 0 && <span className="text-subtle/40">·</span>}
+                    {item}
+                  </span>
+                ))}
+              <span className="text-subtle/40">·</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowInfo(true);
+                }}
+                title={t("mediaInfo.title")}
+                aria-label={t("mediaInfo.title")}
+                className="flex items-center text-muted hover:text-fg transition-colors"
+              >
+                <Info className="w-3.5 h-3.5 block relative -top-px" />
+              </button>
             </div>
+            {quality && <SizeEstimateLine file={file} quality={quality} />}
           </div>
         </div>
 
@@ -73,6 +102,10 @@ export function FileCard({
           {t("fileCard.clickToChange")}
         </span>
       </div>
+
+      {showInfo && (
+        <MediaInfoModal file={file} onClose={() => setShowInfo(false)} />
+      )}
 
       {/* Bottom: the derived output path on a darker inset (no divider/border,
           no "OUTPUT" label). The folder icon opens the save dialog to change it;

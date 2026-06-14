@@ -1,4 +1,5 @@
 pub mod encoders;
+pub mod estimate;
 pub mod jobs;
 pub mod probe;
 pub mod settings;

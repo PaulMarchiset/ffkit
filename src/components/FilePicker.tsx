@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { filesService } from "@/lib/services/filesService";
 import { pickVideoFile } from "@/lib/dialogs";
 import { useFileDrop } from "@/lib/useFileDrop";
-import type { FileInfo } from "@/lib/types";
+import type { FileInfo, Quality } from "@/lib/types";
 import { FileCard } from "./FileCard";
 import { FileDropZone } from "./FileDropZone";
 
@@ -13,6 +13,8 @@ interface Props {
   converting?: boolean;
   outputPath?: string;
   onChangeOutput?: () => void;
+  /** Forwarded to the file card to drive the output-size estimate. */
+  quality?: Quality;
 }
 
 export function FilePicker({
@@ -22,6 +24,7 @@ export function FilePicker({
   converting,
   outputPath,
   onChangeOutput,
+  quality,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +67,7 @@ export function FilePicker({
         converting={converting}
         outputPath={outputPath}
         onChangeOutput={onChangeOutput}
+        quality={quality}
       />
     );
   }

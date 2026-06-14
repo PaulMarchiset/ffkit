@@ -12,6 +12,12 @@ export async function pickVideoFile(): Promise<string | null> {
   return typeof result === "string" ? result : null;
 }
 
+export async function pickVideoFiles(): Promise<string[]> {
+  const result = await open({ filters: VIDEO_FILTERS, multiple: true });
+  if (Array.isArray(result)) return result;
+  return typeof result === "string" ? [result] : [];
+}
+
 export async function pickOutputFile(defaultPath?: string): Promise<string | null> {
   const result = await save({
     defaultPath,

@@ -7,6 +7,7 @@ import {
   onJobLog,
   onJobProgress,
   startJob,
+  startJobs,
 } from "@/lib/tauri";
 import type {
   EncoderList,
@@ -25,6 +26,7 @@ import type {
  */
 export const jobsService = {
   start: (spec: JobSpec): Promise<string> => startJob(spec),
+  startBatch: (specs: JobSpec[]): Promise<string[]> => startJobs(specs),
   cancel: (id: string): Promise<void> => cancelJob(id),
   clear: (id: string): Promise<void> => clearJob(id),
   list: (): Promise<JobStatus[]> => listJobs(),
